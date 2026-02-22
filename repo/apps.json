@@ -2,8 +2,8 @@
   "name": "OpenLyst iOS Apps",
   "subtitle": "Free and open source iOS applications",
   "description": "A curated collection of free and open source iOS applications from OpenLyst.",
-  "iconURL": "https://raw.githubusercontent.com/justacalico/Openlyst-more-builds/main/icon.png",
-  "headerURL": "https://raw.githubusercontent.com/justacalico/Openlyst-more-builds/main/header.png",
+  "iconURL": "https://raw.githubusercontent.com/openlyst/builds/main/icon.png",
+  "headerURL": "https://raw.githubusercontent.com/openlyst/builds/main/header.png",
   "website": "https://openlyst.ink",
   "tintColor": "#dc2626",
   "featuredApps": [
@@ -28,7 +28,7 @@
           "version": "3.0.0",
           "buildVersion": "1",
           "date": "2026-01-11",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-1/docan-3.0.0-2026-02-08-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-1/docan-3.0.0-2026-02-08-ios-unsigned.ipa",
           "size": 10731145,
           "localizedDescription": "# 3.0.0\n\n## New Features\n\n### AI Providers\n- Added DeepSeek AI support with `deepseek-chat` and `deepseek-reasoner` models.\n- Added LM Studio support with OpenAI-compatible API.\n- Dynamic model fetching from API.\n\n### Image Creator\n- Added dedicated Image Creator screen for generating images with AI.\n- Supports Gemini and OpenAI DALL-E providers.\n\n### Playbooks\n- Added Playbooks: User-created YAML integrations for extending Docan.\n- Create custom API integrations with a simple YAML SDK.\n\n### Attachments & Drag-and-Drop\n- Added support for attachments in chat.\n- Drag and drop files directly onto the app."
         }
@@ -53,7 +53,7 @@
           "version": "14.0.0",
           "buildVersion": "1",
           "date": "2026-02-16",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-31/doudou-14.0.0-2026-02-16-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-31/doudou-14.0.0-2026-02-16-ios-unsigned.ipa",
           "size": 14076776,
           "localizedDescription": "# 14.0.0\n\n- New UI for both desktop and mobile.\n- Don't show desktop sidebar when on small screens.\n- Remove logging.\n- Expand the about Doudou section.\n- Port the old navbar.\n- Settings scales.\n- New app layouts.\n- Port the now playing screen.\n- Spec bump to 14.0.0.\n- Mobile track now goes left from right.\n- Lyrics icon is now a microphone; only shown when lyrics are available.\n- Fixed animation when reversing a song."
         },
@@ -61,7 +61,7 @@
           "version": "13.0.0",
           "buildVersion": "1",
           "date": "2026-02-15",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-22/doudou-13.0.0-2026-02-15-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-22/doudou-13.0.0-2026-02-15-ios-unsigned.ipa",
           "size": 13899549,
           "localizedDescription": "# 13.0.0\n\n- Version bump to 13.0.0."
         },
@@ -69,7 +69,7 @@
           "version": "12.0.1",
           "buildVersion": "1",
           "date": "2026-01-15",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-1/doudou-12.1.0-2026-02-08-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-1/doudou-12.1.0-2026-02-08-ios-unsigned.ipa",
           "size": 13810154,
           "localizedDescription": "# 12.0.1\n\n- Updated donate URL | https://openlyst.ink/support\n- Version bump to 12.0.1\n- Haptic feedback for favorite button"
         }
@@ -100,7 +100,7 @@
           "version": "2.0.0",
           "buildVersion": "1",
           "date": "2026-02-13",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-13/finar-1.1.0-2026-02-13-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-13/finar-1.1.0-2026-02-13-ios-unsigned.ipa",
           "size": 15669454,
           "localizedDescription": "# 2.0.0\n\n- Version bump to 2.0.0.\n- Header now shows TV show name and episode.\n- Desktop search bar now spans the full width.\n- Removed the extra season picker for TV shows.\n- Opening an episode now takes you to the show page with that season expanded.\n- 'See All' buttons now work.\n- On-screen controls appear when you move the mouse.\n- On-screen controls auto-hide after a short delay.\n- Fixed card clipping.\n- Fixed desktop detail clipping/overflow by letting action controls wrap on smaller widths.\n- Fixed desktop detail action bar overflow on narrow widths by using a single-row horizontal action strip.\n- Resizing between desktop and mobile layouts now keeps page context (detail/player/library/downloads/settings).\n- Updated the desktop Details panel to use liquid glass styling.\n- Desktop sidebar profile card now hides the server URL and shows a user avatar (with initials fallback).\n- Focus/hover outlines on media cards now adapt to artwork colors instead of a fixed accent.\n- Updated the desktop Trailer button to match the liquid-glass style used by other controls.\n- Trailer playback flow now works end-to-end: local trailers play in-app, and remote trailers open through URL launcher with URL normalization."
         },
@@ -108,7 +108,7 @@
           "version": "1.1.0",
           "buildVersion": "1",
           "date": "2026-01-11",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-1/finar-1.1.0-2026-02-08-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-1/finar-1.1.0-2026-02-08-ios-unsigned.ipa",
           "size": 15584558,
           "localizedDescription": "# 1.1.0\n\n## Fixed\n- Fixed controller input in SteamOS"
         }
@@ -128,7 +128,7 @@
           "version": "7.0.0",
           "buildVersion": "1",
           "date": "2026-01-18",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-1/klit-7.0.0-2026-02-08-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-1/klit-7.0.0-2026-02-08-ios-unsigned.ipa",
           "size": 15262389,
           "localizedDescription": "# 7.0.0\n\n- Updates version to **7.0.0**.\n- Updated description to \"E926 API client\"\n\n## Added\n\n### 🔄 Pull-to-Refresh on Mobile Home Page\n- Added native pull-down-to-refresh support on the mobile Home page\n- Swipe down from the top of the post grid to refresh latest posts\n- Smooth refresh indicator animation with haptic feedback\n\n### ⌨️ Keyboard Controls for Mobile Post Viewer\nAdded keyboard navigation support to the mobile post detail viewer, matching the desktop experience:\n\n**Navigation:**\n- `A` / `←` — Previous post\n- `D` / `→` — Next post\n\n**Actions:**\n- `F` — Toggle favorite\n- `W` / `↑` — Upvote (toggle)\n- `S` / `↓` — Downvote (toggle)\n\n### 📱 Material Style Navigation Bar\n- Added a proper Material-style bottom navigation bar when Material UI mode is enabled\n- Full-width design with simple icon/label layout (no floating pill style)\n- Clean top border separator instead of shadow/blur effects\n- Consistent with Android Material Design guidelines\n\n### ⚙️ Material Style Settings Page\n- Settings page now responds to UI style mode\n- Material mode uses solid containers without blur effects\n- Clean borders and simple dividers in Material mode\n- Removes glass effects and shadows for better performance on lower-end devices\n\n### 🌈 Rating Aura on Post Cards\n- Posts now display a colored glow/aura around the card based on content rating\n- **Green** — Safe content\n- **Orange** — Questionable content\n- **Red** — Explicit content\n- Removed the text badge from the bottom-left corner for a cleaner look\n- Rating is now instantly visible at a glance without reading text\n- **Liquid Glass mode**: Enhanced glass-like aura with layered glows, soft outer bloom, and subtle highlight reflection\n- **Material mode**: Simple, performance-focused aura effect\n\n### 📐 Centralized Post Grid Settings\n- New **POST GRID** section in Settings with comprehensive controls:\n  - **Auto Mode** — Automatically adjusts grid columns based on screen width (2 cols for phones, 3 for tablets, up to 8 for large monitors)\n  - **Grid Size** — Manual control for number of columns (disabled when Auto Mode is on)\n  - **Spacing** — Slider to control gap between post cards (0-16pt)\n  - **Padding** — Slider to control outer padding around the grid (0-24pt)\n  - **Score Threshold** — Configurable minimum score filter for latest posts (0-100, default: 20). Posts automatically reload when changed.\n- Added same POST GRID settings to desktop settings page (Content section)\n- Removed per-page grid size controls from Home, Hot, Popular, Favorites, and Search pages\n- Removed grid size selectors from desktop toolbar (Home, Hot, Popular, Favorites, Search)\n- All pages now use centralized settings for consistent appearance\n\n### 🚫 Blacklist Management\n- New **BLACKLIST** section in Settings (mobile and desktop):\n  - **Enable Blacklist** — Toggle to enable/disable blacklist filtering globally\n  - **Manage Blacklist** — Opens dedicated page to edit blacklist rules\n- **Blacklist Settings Page** with full management:\n  - **Sync from Account** — Pull blacklisted tags from your e621/e926 account\n  - **Text Editor** — Edit blacklist entries directly (one tag/rule per line)\n  - **Help Dialog** — Documents blacklist syntax (AND logic, rating filters, wildcards, metatags)\n  - Shows active rule count and enabled status\n- All pages automatically filter posts based on blacklist rules\n\n## Fixed\n\n### 🎊 Left-Handed Mode Confetti Position\n- Fixed confetti animation playing from the wrong side when left-handed mode is enabled\n- Confetti now correctly originates near the favorite button position in both left and right-handed modes\n\n### 📐 Auto Mode Grid Scaling\n- Fixed auto mode only using up to 4 columns even on large screens\n- Auto mode now scales properly: 2 cols (phones) → 3 (tablets) → 4-5 (small desktops) → 6-8 (large monitors)\n- Grid now properly responds to window resizing using LayoutBuilder\n\n### 🔍 Tag Suggestions Overhaul\n- **Fixed `-tag` and `~tag` prefix handling**: Tag suggestions now properly work when typing exclusion tags (e.g., `-scat`, `-young`) or optional tags (`~tag`)\n- **Fixed suggestions closing unexpectedly**: Removed aggressive focus-based closing that caused suggestions to disappear while typing\n- **Fixed suggestions appearing when not wanted**: Suggestions now only appear when actively typing a tag (2+ characters)\n- **Tap outside to close**: Suggestions close when tapping anywhere outside the suggestion list\n- **Better word detection**: Properly extracts the current word being typed, handling cursor position correctly\n- **Prefix preservation**: When selecting a suggestion for `-tag` or `~tag`, the prefix is correctly preserved\n\n### 🖼️ Full Resolution Image Loading\n- Fixed mobile post viewer not loading full resolution images\n- Mobile now uses the same resolution priority as desktop: full file → sample → preview\n- Fixes issues with small images (e.g., 512x512) not displaying at full quality on alternative servers"
         }
@@ -153,7 +153,7 @@
           "version": "2.0.0",
           "buildVersion": "1",
           "date": "2026-02-17",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-32/opentorrent-2.0.0-2026-02-17-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-32/opentorrent-2.0.0-2026-02-17-ios-unsigned.ipa",
           "size": 9654101,
           "localizedDescription": "# 2.0.0\n\n- fixed sub-buttons on ios theme\n- fixed navbar white coloured on ios\n- better iso support\n- new ios theme\n- System option for design system\n- Change your login from the login screen\n- start on v2\n- Torznab search category label: show \"Adult\" instead of placeholder \"XXX\"\n- Add torrent page: scrollable layout so options and button do not overflow on small screens\n- Torrent detail: localized tab labels and loading/error/not-found messages\n- Login page: localized connection messages and default server name\n- Settings and server preferences: localized update-check messages and preferences saved / not connected\n- Torrent list: localized Select All tooltip, selected count, and delete confirmation\n- Adaptive navigation: use CupertinoPageRoute when design system is Cupertino (torrent list, settings, server selection)\n- Torrent list: Cupertino-style scaffold and nav bar when design system is Cupertino\n- Add torrent: Cupertino scaffold with segmented control when design system is Cupertino\n- Torrent detail: Cupertino scaffold with segmented control for tabs when design system is Cupertino\n- Desktop: minimize/close to system tray using window_manager and tray_manager\n- Desktop: global download/upload speed shown in sidebar (Material and Cupertino layouts)\n- Torrent list: fix \"No Material widget found\" for FilterChip when using Cupertino design (wrap filter bar in Material)\n- Fix Formatters usage: use formatDownloadSpeed/formatUploadSpeed instead of formatSpeedDown/formatSpeedUp"
         },
@@ -161,7 +161,7 @@
           "version": "1.0.0",
           "buildVersion": "1",
           "date": "2026-01-14",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-1/opentorrent-1.0.0-2026-02-08-ios-unsigned.ipa",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-1/opentorrent-1.0.0-2026-02-08-ios-unsigned.ipa",
           "size": 9384944,
           "localizedDescription": "Initial release of Opentorrent, a cross-platform qBittorrent client that brings seamless torrenting to iOS, macOS, Windows, Linux, Android, and the Web."
         }

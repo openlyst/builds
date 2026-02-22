@@ -4,7 +4,7 @@ This project provides builds for OpenLyst projects across multiple platforms.
 
 https://openlyst.ink
 
-**📦 [OpenLyst Builds — Releases & Repositories](https://justacalico.github.io/Openlyst-more-builds/)** — A GitHub Pages site listing all pre-releases, repositories (AltStore, F-Droid, Homebrew, AUR, Docker), and GitHub releases in one place. Enable Pages in repo Settings → Pages → Source: Deploy from branch → Branch: main, folder: `/docs`.
+**📦 [OpenLyst Builds — Releases & Repositories](https://openlyst.github.io/builds/)** — A GitHub Pages site listing all pre-releases, repositories (AltStore, F-Droid, Homebrew, AUR, Docker), and GitHub releases in one place. Enable Pages in repo Settings → Pages → Source: Deploy from branch → Branch: main, folder: `/docs`.
 
 ## Unified Build Script
 
@@ -148,8 +148,8 @@ OpenTorrent:
 
 ## AltStore (iOS)
 
-- Add this Source URL in AltStore: `https://raw.githubusercontent.com/JustACalico/Openlyst-more-builds/main/repo/apps.json`
-- CDN URL (faster): `https://cdn.jsdelivr.net/gh/JustACalico/Openlyst-more-builds@main/repo/apps.json`
+- Add this Source URL in AltStore: `https://raw.githubusercontent.com/openlyst/builds/main/repo/apps.json`
+- CDN URL (faster): `https://cdn.jsdelivr.net/gh/openlyst/builds@main/repo/apps.json`
 
 **Notes:**
 - The source includes app permissions (privacy descriptions and entitlements) when available.
@@ -158,7 +158,7 @@ OpenTorrent:
 
 ## F-Droid (Android)
 
-- Repository URL: `https://raw.githubusercontent.com/JustACalico/Openlyst-more-builds/main/fdroid-repo`
+- Repository URL: `https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo`
 - Add this repository in F-Droid client to access OpenLyst Android apps.
 
 ---
@@ -168,20 +168,20 @@ OpenTorrent:
 ### Quick Setup
 
 ```bash
-brew tap justacalico/openlyst-more-builds
+brew tap openlyst/builds
 ```
 
 ### Installation
 
 ```bash
 # Add the tap
-brew tap justacalico/openlyst-more-builds https://github.com/justacalico/openlyst-more-builds.git
+brew tap openlyst/builds https://github.com/openlyst/builds.git
 
 # Install apps
-brew install justacalico/openlyst-more-builds/app-name
+brew install openlyst/builds/app-name
 
 # For cask applications on macOS
-brew install --cask justacalico/openlyst-more-builds/app-name
+brew install --cask openlyst/builds/app-name
 ```
 
 ### Available Commands
@@ -189,10 +189,10 @@ brew install --cask justacalico/openlyst-more-builds/app-name
 | Command | Description |
 |---------|-------------|
 | `brew update` | Update the tap |
-| `brew search justacalico/openlyst-more-builds/` | List available formulae |
-| `brew install justacalico/openlyst-more-builds/app-name` | Install an application |
+| `brew search openlyst/builds/` | List available formulae |
+| `brew install openlyst/builds/app-name` | Install an application |
 | `brew uninstall app-name` | Uninstall an application |
-| `brew info justacalico/openlyst-more-builds/app-name` | Get formula info |
+| `brew info openlyst/builds/app-name` | Get formula info |
 
 ---
 
