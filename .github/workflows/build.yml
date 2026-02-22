@@ -561,10 +561,23 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Patch clipboard plugin (Windows C4189)
+        shell: bash
+        run: |
+          # clipboard plugin has unused variable headerSize -> C4189 treated as error on MSVC
+          cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          [ -d "$cache" ] || cache="/c/Users/$USER/AppData/Local/Pub/Cache"
+          f=$(find "$cache" -name "clipboard_plugin.cpp" -path "*/clipboard/*" 2>/dev/null | head -1)
+          if [ -n "$f" ] && grep -q "headerSize" "$f"; then
+            sed -i.bak '/headerSize.*=/a\  (void)headerSize;' "$f" && rm -f "${f}.bak" || true
+          fi
+
       - name: Build Windows
         id: build
         run: |
-          flutter pub get 2>&1 | Tee-Object -Variable pubgetOutput
           flutter build windows --release 2>&1 | Tee-Object -Variable buildOutput
           $warnings = ($buildOutput | Select-String -Pattern "warning|deprecated" -AllMatches).Matches.Count
           echo "warnings=$warnings" >> $env:GITHUB_OUTPUT
@@ -2344,7 +2357,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2 libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
           # Update locate database
           sudo updatedb || true
 
