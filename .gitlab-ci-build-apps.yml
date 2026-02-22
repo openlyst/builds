@@ -1,0 +1,141 @@
+# =============================================================================
+# Build Apps pipeline (port of .github/workflows/build.yml)
+# Trigger manually with variables: BUILD_DOUDOU, BUILD_DOCAN, etc. (true/false)
+# and DOUDOU_PLATFORMS, DOCAN_PLATFORMS, etc. (comma-separated: ios,android,...)
+# and DOUDOU_COMMIT_HASH, DOCAN_COMMIT_HASH, etc. (optional)
+# =============================================================================
+# This file defines create-release, push-aur-unstable, and one sample build job.
+# To port the full 36 build jobs from build.yml, replicate the pattern for each
+# app/platform (clone GitLab repo, Flutter build, upload artifacts); use tags
+# "macos" and "windows" for those runners.
+# =============================================================================
+
+# --- Sample: one Linux build job (build-web-docan). Others follow same pattern. ---
+build-web-docan:
+  stage: build
+  image: cirrusci/flutter:stable
+  tags:
+    - linux
+  allow_failure: true
+  rules:
+    - if: $BUILD_DOCAN == "true" && $DOCAN_PLATFORMS =~ /web/
+      when: on_success
+    - when: never
+  variables:
+    DOCAN_PLATFORMS: "ios,android,windows,linux,macos,web"
+    DOCAN_COMMIT_HASH: ""
+  before_script:
+    - git clone https://gitlab.com/Openlyst/docan.git app && cd app
+    - '[ -n "$DOCAN_COMMIT_HASH" ] && git checkout "$DOCAN_COMMIT_HASH" || true'
+    - flutter config --enable-web
+    - flutter pub get
+  script:
+    - cd app
+    - VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+    - BUILD_DATE=$(date +%Y-%m-%d)
+    - flutter build web --release --build-name=$VERSION
+    - cd build && zip -r ../../docan-${VERSION}-${BUILD_DATE}-web.zip web/ && cd ../..
+  artifacts:
+    when: always
+    paths:
+      - docan-*-web.zip
+
+# --- Create GitLab Release from build artifacts ---
+create-release:
+  stage: release
+  image: alpine:latest
+  tags:
+    - linux
+  needs:
+    - job: build-web-docan
+      optional: true
+    # Add other build-* jobs here when you add them (all optional: true)
+  rules:
+    - if: $BUILD_DOUDOU == "true" || $BUILD_DOCAN == "true" || $BUILD_FINAR == "true" || $BUILD_KLIT == "true" || $BUILD_REPSTORE == "true" || $BUILD_OPENTORRENT == "true"
+      when: on_success
+    - when: never
+  before_script:
+    - apk add --no-cache findutils coreutils
+  script:
+    - |
+      if [ -d "artifacts" ]; then
+        find artifacts -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec mv {} . \; 2>/dev/null || true
+        rm -rf artifacts
+      fi
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -print
+    - |
+      echo "# SHA256 checksums" > SHA256SUMS.txt
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec sha256sum {} \; >> SHA256SUMS.txt || true
+    - |
+      echo "## Build #${CI_PIPELINE_ID} - $(date +%Y-%m-%d)" > release_notes.md
+      echo "" >> release_notes.md
+      echo "| File | Size |" >> release_notes.md
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md || true
+      echo "" >> release_notes.md
+      echo "SHA256 checksums in SHA256SUMS.txt." >> release_notes.md
+  release:
+    tag_name: "build-$CI_PIPELINE_ID"
+    name: "Build #$CI_PIPELINE_ID"
+    description: "release_notes.md"
+  artifacts:
+    paths:
+      - "*.zip"
+      - "*.apk"
+      - "*.aab"
+      - "*.ipa"
+      - "*.deb"
+      - "*.AppImage"
+      - "*.exe"
+      - "*.tar.gz"
+      - SHA256SUMS.txt
+
+# --- Push unstable AUR packages (after release) ---
+push-aur-unstable:
+  stage: aur
+  image: python:3.11-bookworm
+  tags:
+    - linux
+  needs:
+    - job: create-release
+  rules:
+    - if: $BUILD_DOUDOU == "true" || $BUILD_DOCAN == "true" || $BUILD_FINAR == "true" || $BUILD_KLIT == "true" || $BUILD_REPSTORE == "true" || $BUILD_OPENTORRENT == "true"
+      when: on_success
+    - when: never
+  before_script:
+    - pip install --upgrade pip && pip install -r requirements.txt
+  script:
+    - python build.py --target aur --unstable-aur-only --verbose
+    - |
+      for pkg in aur-packages/*-unstable/; do
+        [ -d "$pkg" ] || continue
+        pkg=$(basename "$pkg")
+        [ -f "aur-packages/$pkg/PKGBUILD" ] || continue
+        docker run --rm -v "$PWD/aur-packages/$pkg:/pkg:rw" archlinux:latest \
+          bash -c "pacman -Syu --noconfirm base-devel 2>/dev/null; useradd -m -u 1000 builduser; chown -R builduser:builduser /pkg; su builduser -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'"
+      done
+    - |
+      mkdir -p ~/.ssh && chmod 700 ~/.ssh
+      printf '%s' "$AUR_SSH_KEY_BASE64" | base64 -d > ~/.ssh/aur_key
+      chmod 600 ~/.ssh/aur_key
+      ssh-keyscan -t ed25519,rsa aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null || true
+      eval "$(ssh-agent -s)"
+      printf '%s' "$AUR_SSH_KEY_PASSWORD" | ssh-add ~/.ssh/aur_key 2>/dev/null || true
+      export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
+      mkdir -p aur-push
+      for pkg in aur-packages/*-unstable/; do
+        [ -d "$pkg" ] || continue
+        pkg=$(basename "$pkg")
+        [ -f "aur-packages/$pkg/PKGBUILD" ] || continue
+        git clone --depth 1 "ssh://aur@aur.archlinux.org/${pkg}.git" "aur-push/$pkg" 2>/dev/null || true
+        cp -f "aur-packages/$pkg/PKGBUILD" "aur-packages/$pkg/.SRCINFO" "aur-push/$pkg/" 2>/dev/null || true
+        cd "aur-push/$pkg"
+        git config user.name "gitlab-ci"
+        git config user.email "gitlab-ci@gitlab"
+        git add PKGBUILD .SRCINFO
+        if ! git diff --staged --quiet; then
+          git commit -m "Update to latest from GitLab releases (Build Apps)"
+          git push origin master
+        fi
+        cd ../..
+      done
+      rm -rf aur-push

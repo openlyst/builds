@@ -1,0 +1,29 @@
+Categories:
+  - System
+License: Unknown
+AuthorName: OpenLyst Developer
+AuthorWebSite: https://openlyst.ink
+WebSite: https://openlyst.ink
+SourceCode: 
+IssueTracker: 
+
+AutoName: Docan
+Summary: AI chat app with Liquid Glass UI
+
+Description: |
+    Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.
+
+RepoType: git
+Repo: 
+
+Builds:
+
+  - versionName: '3.0.0'
+    versionCode: 1
+    commit: v3.0.0
+    subdir: app
+    gradle:
+      - yes
+
+CurrentVersion: '3.0.0'
+CurrentVersionCode: 1

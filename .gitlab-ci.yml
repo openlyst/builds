@@ -1,0 +1,108 @@
+# =============================================================================
+# Port of GitHub Actions workflows to GitLab CI
+# - Build All Repositories (from build-unified.yml): manual job with variables
+# - Build Apps (from build.yml): manual trigger, multi-runner (Linux/Windows/macOS)
+# =============================================================================
+# GitLab CI/CD variables (set when running pipeline manually or in Settings):
+#   Build Repositories: TARGET (all|altstore|fdroid|homebrew|aur), PLATFORM (both|macOS|Linux), CALC_HASHES (true|false)
+#   Build Apps: BUILD_DOUDOU, BUILD_DOCAN, BUILD_FINAR, BUILD_KLIT, BUILD_REPSTORE, BUILD_OPENTORRENT (true|false)
+#   Plus DOUDOU_PLATFORMS, DOCAN_PLATFORMS, etc. (comma-separated: ios,android,windows,linux,macos,web,docker)
+#   Plus DOUDOU_COMMIT_HASH, DOCAN_COMMIT_HASH, etc. (optional)
+# Secrets → use CI/CD variables (masked): AUR_SSH_KEY_BASE64, AUR_SSH_KEY_PASSWORD
+# macOS/Windows jobs use tags - configure self-hosted runners with tags "macos" and "windows" if needed.
+# =============================================================================
+
+include:
+  - local: .gitlab-ci-build-apps.yml
+
+stages:
+  - build
+  - release
+  - aur
+
+variables:
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: 0
+  FLUTTER_VERSION: "stable"
+
+# -----------------------------------------------------------------------------
+# BUILD ALL REPOSITORIES (port of .github/workflows/build-unified.yml)
+# Trigger: Run pipeline → set TARGET, PLATFORM, CALC_HASHES as needed
+# -----------------------------------------------------------------------------
+build-repositories:
+  stage: build
+  image: python:3.11-bookworm
+  tags:
+    - linux
+  when: manual
+  variables:
+    TARGET: "all"
+    PLATFORM: "both"
+    CALC_HASHES: "false"
+  before_script:
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+  script:
+    - |
+      ARGS="--target ${TARGET} --platform ${PLATFORM} --verbose"
+      if [ "$CALC_HASHES" = "true" ]; then
+        ARGS="$ARGS --calculate-sha256 --calculate-info"
+      fi
+      python build.py $ARGS
+    - |
+      if [ "$TARGET" = "all" ] || echo "$TARGET" | grep -q aur; then
+        for pkg in aur-packages/*/; do
+          pkg=$(basename "$pkg")
+          if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
+          docker run --rm -v "$PWD/aur-packages/$pkg:/pkg:rw" archlinux:latest \
+            bash -c "pacman -Syu --noconfirm base-devel 2>/dev/null; useradd -m -u 1000 builduser; chown -R builduser:builduser /pkg; su builduser -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'"
+        done
+      fi
+    - |
+      if [ "$TARGET" = "all" ] || echo "$TARGET" | grep -q aur; then
+        set -e
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        printf '%s' "$AUR_SSH_KEY_BASE64" | base64 -d > ~/.ssh/aur_key
+        chmod 600 ~/.ssh/aur_key
+        ssh-keyscan -t ed25519,rsa aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null || true
+        eval "$(ssh-agent -s)"
+        printf '%s' "$AUR_SSH_KEY_PASSWORD" | ssh-add ~/.ssh/aur_key 2>/dev/null || true
+        export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
+        mkdir -p aur-push
+        for pkg in aur-packages/*/; do
+          pkg=$(basename "$pkg")
+          if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
+          if ! git clone --depth 1 "ssh://aur@aur.archlinux.org/${pkg}.git" "aur-push/$pkg" 2>&1; then continue; fi
+          cp -f "aur-packages/$pkg/PKGBUILD" "aur-packages/$pkg/.SRCINFO" "aur-push/$pkg/" 2>/dev/null || true
+          cd "aur-push/$pkg"
+          git config user.name "gitlab-ci"
+          git config user.email "gitlab-ci@gitlab"
+          git add PKGBUILD .SRCINFO
+          if ! git diff --staged --quiet; then
+            git commit -m "Update to latest from Openlyst API"
+            git push origin master
+          fi
+          cd ../..
+        done
+        rm -rf aur-push
+      fi
+    - |
+      echo "=== Build Output Structure ==="
+      [ -d repo ] && ls -la repo/ && jq -r '.apps[].name' repo/apps.json 2>/dev/null || true
+      [ -d fdroid-repo ] && ls -la fdroid-repo/ && find fdroid-repo/metadata -name "*.yml" 2>/dev/null | wc -l || true
+      [ -d homebrew-tap ] && ls -la homebrew-tap/Formula/ && find homebrew-tap/Formula -name "*.rb" 2>/dev/null | wc -l || true
+      [ -d aur-packages ] && ls -la aur-packages/
+    - git config user.name "gitlab-ci" && git config user.email "gitlab-ci@gitlab"
+    - |
+      git add repo/ fdroid-repo/ homebrew-tap/ 2>/dev/null || true
+      if ! git diff --staged --quiet; then
+        git commit -m "Update repositories (${TARGET}) - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git push origin $CI_DEFAULT_BRANCH || (git pull origin $CI_DEFAULT_BRANCH --rebase && git push origin $CI_DEFAULT_BRANCH)
+      fi
+  artifacts:
+    when: always
+    paths:
+      - repo/
+      - fdroid-repo/
+      - homebrew-tap/
+    expire_in: 90 days

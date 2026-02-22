@@ -1,0 +1,3794 @@
+name: Build Apps
+on:
+  workflow_dispatch:
+    inputs:
+      # Doudou
+      build_doudou:
+        description: 'Build Doudou'
+        required: false
+        type: boolean
+        default: false
+      doudou_platforms:
+        description: 'Doudou platforms (comma-separated: ios,android,windows,linux,macos)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos'
+      doudou_commit_hash:
+        description: 'Doudou commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      # Docan
+      build_docan:
+        description: 'Build Docan'
+        required: false
+        type: boolean
+        default: false
+      docan_platforms:
+        description: 'Docan platforms (comma-separated: ios,android,windows,linux,macos,web)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos,web'
+      docan_commit_hash:
+        description: 'Docan commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      # Finar
+      build_finar:
+        description: 'Build Finar'
+        required: false
+        type: boolean
+        default: false
+      finar_platforms:
+        description: 'Finar platforms (comma-separated: ios,android,windows,linux,macos,web,docker)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos,web,docker'
+      finar_commit_hash:
+        description: 'Finar commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      # Klit
+      build_klit:
+        description: 'Build Klit'
+        required: false
+        type: boolean
+        default: false
+      klit_platforms:
+        description: 'Klit platforms (comma-separated: ios,android,windows,linux,macos,web)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos,web'
+      klit_commit_hash:
+        description: 'Klit commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      # Repstore
+      build_repstore:
+        description: 'Build Repstore'
+        required: false
+        type: boolean
+        default: false
+      repstore_platforms:
+        description: 'Repstore platforms (comma-separated: ios,android,windows,linux,macos,web)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos,web'
+      repstore_commit_hash:
+        description: 'Repstore commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      # OpenTorrent
+      build_opentorrent:
+        description: 'Build OpenTorrent'
+        required: false
+        type: boolean
+        default: false
+      opentorrent_platforms:
+        description: 'OpenTorrent platforms (comma-separated: ios,android,windows,linux,macos,web)'
+        required: false
+        type: string
+        default: 'ios,android,windows,linux,macos,web'
+      opentorrent_commit_hash:
+        description: 'OpenTorrent commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  FLUTTER_VERSION: 'stable'
+
+jobs:
+  # ============================================================================
+  # IOS BUILDS (No Code Signing)
+  # ============================================================================
+
+  # IOS - DOUDOU
+  build-ios-doudou:
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'ios') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          # Only replace standalone RepeatMode (not AudioServiceRepeatMode) using word boundaries
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install iOS Rust targets
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add x86_64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+
+            # Try to run codegen if it exists
+            dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
+
+            # Try running make/build scripts if they exist
+            if [ -f "Makefile" ]; then
+              make ios || true
+            fi
+
+            if [ -f "scripts/build-ios.sh" ]; then
+              bash scripts/build-ios.sh || true
+            fi
+
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-ios
+          path: doudou-*-ios-unsigned.ipa
+
+  # IOS - DOCAN
+  build-ios-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'ios') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-ios
+          path: docan-*-ios-unsigned.ipa
+
+  # IOS - FINAR
+  build-ios-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'ios') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-ios
+          path: finar-*-ios-unsigned.ipa
+
+  # IOS - KLIT
+  build-ios-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'ios') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-ios
+          path: klit-*-ios-unsigned.ipa
+
+  # IOS - OPENTORRENT
+  build-ios-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'ios') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-ios
+          path: opentorrent-*-ios-unsigned.ipa
+
+  # ============================================================================
+  # WINDOWS BUILDS
+  # ============================================================================
+
+  # 1. BUILD WINDOWS - DOUDOU (x64)
+  build-windows-doudou:
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      warnings: ${{ steps.status.outputs.warnings }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+
+      - name: Fix RepeatMode conflict with Flutter
+        shell: bash
+        run: |
+          # Only replace standalone RepeatMode (not AudioServiceRepeatMode) using word boundaries
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Windows
+        id: build
+        run: |
+          flutter pub get 2>&1 | Tee-Object -Variable pubgetOutput
+          flutter build windows --release 2>&1 | Tee-Object -Variable buildOutput
+          $warnings = ($buildOutput | Select-String -Pattern "warning|deprecated" -AllMatches).Matches.Count
+          echo "warnings=$warnings" >> $env:GITHUB_OUTPUT
+
+      - name: ZIP Windows Build
+        run: |
+          $filename = "doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          @"
+          [Setup]
+          AppName=Doudou
+          AppVersion=${{ steps.version.outputs.version }}
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\Doudou
+          DefaultGroupName=Doudou
+          OutputDir=.
+          OutputBaseFilename=doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\doudou.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\Doudou"; Filename: "{app}\doudou.exe"
+          Name: "{group}\{cm:UninstallProgram,Doudou}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Doudou"; Filename: "{app}\doudou.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\doudou.exe"; Description: "{cm:LaunchProgram,Doudou}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: |
+          echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+          echo "warnings=${{ steps.build.outputs.warnings }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-windows-x64-zip
+          path: doudou-*-windows-x64.zip
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-windows-x64-installer
+          path: doudou-*-windows-x64-setup.exe
+
+  # 2. BUILD WINDOWS - DOCAN (x64)
+  build-windows-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Windows
+        run: |
+          flutter pub get
+          flutter build windows --release
+
+      - name: ZIP Windows Build
+        run: |
+          $filename = "docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          @"
+          [Setup]
+          AppName=Docan
+          AppVersion=${{ steps.version.outputs.version }}
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\Docan
+          DefaultGroupName=Docan
+          OutputDir=.
+          OutputBaseFilename=docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\docan.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\Docan"; Filename: "{app}\docan.exe"
+          Name: "{group}\{cm:UninstallProgram,Docan}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Docan"; Filename: "{app}\docan.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\docan.exe"; Description: "{cm:LaunchProgram,Docan}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-windows-x64-zip
+          path: docan-*-windows-x64.zip
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-windows-x64-installer
+          path: docan-*-windows-x64-setup.exe
+
+  # 3. BUILD WINDOWS - FINAR (x64)
+  build-windows-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Windows
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build windows --release
+
+      - name: ZIP Windows Build
+        run: |
+          $filename = "finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          @"
+          [Setup]
+          AppName=Finar
+          AppVersion=${{ steps.version.outputs.version }}
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\Finar
+          DefaultGroupName=Finar
+          OutputDir=.
+          OutputBaseFilename=finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\finar.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\Finar"; Filename: "{app}\finar.exe"
+          Name: "{group}\{cm:UninstallProgram,Finar}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Finar"; Filename: "{app}\finar.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\finar.exe"; Description: "{cm:LaunchProgram,Finar}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-windows-x64-zip
+          path: finar-*-windows-x64.zip
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-windows-x64-installer
+          path: finar-*-windows-x64-setup.exe
+
+  # 4. BUILD WINDOWS - KLIT (x64)
+  build-windows-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Windows
+        run: |
+          flutter pub get
+          flutter build windows --release
+
+      - name: ZIP Windows Build
+        run: |
+          $filename = "klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          @"
+          [Setup]
+          AppName=Klit
+          AppVersion=${{ steps.version.outputs.version }}
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\Klit
+          DefaultGroupName=Klit
+          OutputDir=.
+          OutputBaseFilename=klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\klit.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\Klit"; Filename: "{app}\klit.exe"
+          Name: "{group}\{cm:UninstallProgram,Klit}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Klit"; Filename: "{app}\klit.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\klit.exe"; Description: "{cm:LaunchProgram,Klit}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-windows-x64-zip
+          path: klit-*-windows-x64.zip
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-windows-x64-installer
+          path: klit-*-windows-x64-setup.exe
+
+  # 5. BUILD WINDOWS - OPENTORRENT (x64)
+  build-windows-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Windows
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build windows --release
+
+      - name: ZIP Windows Build
+        run: |
+          $filename = "opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          @"
+          [Setup]
+          AppName=OpenTorrent
+          AppVersion=${{ steps.version.outputs.version }}
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\OpenTorrent
+          DefaultGroupName=OpenTorrent
+          OutputDir=.
+          OutputBaseFilename=opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\opentorrent.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\OpenTorrent"; Filename: "{app}\opentorrent.exe"
+          Name: "{group}\{cm:UninstallProgram,OpenTorrent}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\OpenTorrent"; Filename: "{app}\opentorrent.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\opentorrent.exe"; Description: "{cm:LaunchProgram,OpenTorrent}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-windows-x64-zip
+          path: opentorrent-*-windows-x64.zip
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-windows-x64-installer
+          path: opentorrent-*-windows-x64-setup.exe
+
+  # ============================================================================
+  # MACOS BUILDS (No Code Signing)
+  # ============================================================================
+
+  # MACOS - DOUDOU
+  build-macos-doudou:
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          # Only replace standalone RepeatMode (not AudioServiceRepeatMode) using word boundaries
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build macOS (No Code Signing)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
+        env:
+          # Disable code signing
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+      - name: Disable code signing in Xcode project
+        run: |
+          # Disable code signing in the release configuration
+          cd macos
+          /usr/libexec/PlistBuddy -c "Set :buildSettings:CODE_SIGN_IDENTITY ''" Runner.xcodeproj/project.pbxproj 2>/dev/null || true
+          xcodebuild -project Runner.xcodeproj -scheme Runner -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath ../build/macos_unsigned || true
+
+      - name: Create ZIP (unsigned)
+        run: |
+          cd build/macos/Build/Products/Release
+          # Create a zip of the .app bundle
+          zip -r $GITHUB_WORKSPACE/doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "$start_time" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-macos
+          path: doudou-*-macos-unsigned.zip
+
+  # MACOS - DOCAN
+  build-macos-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build macOS (No Code Signing)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+      - name: Create ZIP (unsigned)
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r $GITHUB_WORKSPACE/docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "$start_time" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-macos
+          path: docan-*-macos-unsigned.zip
+
+  # MACOS - FINAR
+  build-macos-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build macOS (No Code Signing)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+      - name: Create ZIP (unsigned)
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r $GITHUB_WORKSPACE/finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "$start_time" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-macos
+          path: finar-*-macos-unsigned.zip
+
+  # MACOS - KLIT
+  build-macos-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Set macOS deployment target for gal plugin (requires 11.0+)
+        run: |
+          if [ -f macos/Podfile ]; then
+            sed -i '' "s/platform :osx, '[^']*'/platform :osx, '11.0'/" macos/Podfile
+          fi
+
+      - name: Build macOS (No Code Signing)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+      - name: Create ZIP (unsigned)
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r $GITHUB_WORKSPACE/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "$start_time" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-macos
+          path: klit-*-macos-unsigned.zip
+
+  # MACOS - OPENTORRENT
+  build-macos-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build macOS (No Code Signing)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+      - name: Create ZIP (unsigned)
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r $GITHUB_WORKSPACE/opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "$start_time" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-macos
+          path: opentorrent-*-macos-unsigned.zip
+
+  # ============================================================================
+  # ANDROID BUILDS (APK + AAB)
+  # ============================================================================
+
+  # ANDROID - DOUDOU
+  build-android-doudou:
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          # Only replace standalone RepeatMode (not AudioServiceRepeatMode) using word boundaries
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.DOUDOU_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.DOUDOU_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.DOUDOU_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.DOUDOU_KEY_ALIAS }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "Setting up release signing..."
+            mkdir -p android/keystore
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
+            cat > android/key.properties << EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=keystore/upload-keystore.jks
+          EOF
+            echo "signing=release" >> $GITHUB_OUTPUT
+          else
+            echo "signing=debug" >> $GITHUB_OUTPUT
+            echo "⚠️ No keystore configured, using debug signing"
+          fi
+
+      - name: Validate Android keystore
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          set -euo pipefail
+          STORE_PASSWORD=$(grep '^storePassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_PASSWORD=$(grep '^keyPassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_ALIAS=$(grep '^keyAlias=' android/key.properties | cut -d'=' -f2-)
+          STORE_FILE=$(grep '^storeFile=' android/key.properties | cut -d'=' -f2-)
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" || -z "$STORE_FILE" ]]; then
+            echo "❌ android/key.properties is missing required keystore fields"
+            exit 1
+          fi
+
+          if [[ -f "$STORE_FILE" ]]; then
+            KEYSTORE_PATH="$STORE_FILE"
+          elif [[ -f "android/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/$STORE_FILE"
+          elif [[ -f "android/app/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/app/$STORE_FILE"
+          else
+            echo "❌ Keystore file not found for storeFile=$STORE_FILE"
+            exit 1
+          fi
+
+          echo "Validating release keystore and alias..."
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "✅ Android keystore validation passed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-android
+          path: |
+            doudou-*.apk
+            doudou-*.aab
+
+  # ANDROID - DOCAN
+  build-android-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.DOCAN_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.DOCAN_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.DOCAN_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.DOCAN_KEY_ALIAS }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "Setting up release signing..."
+            mkdir -p android/keystore
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
+            cat > android/key.properties << EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=keystore/upload-keystore.jks
+          EOF
+            echo "signing=release" >> $GITHUB_OUTPUT
+          else
+            echo "signing=debug" >> $GITHUB_OUTPUT
+            echo "⚠️ No keystore configured, using debug signing"
+          fi
+
+      - name: Validate Android keystore
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          set -euo pipefail
+          STORE_PASSWORD=$(grep '^storePassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_PASSWORD=$(grep '^keyPassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_ALIAS=$(grep '^keyAlias=' android/key.properties | cut -d'=' -f2-)
+          STORE_FILE=$(grep '^storeFile=' android/key.properties | cut -d'=' -f2-)
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" || -z "$STORE_FILE" ]]; then
+            echo "❌ android/key.properties is missing required keystore fields"
+            exit 1
+          fi
+
+          if [[ -f "$STORE_FILE" ]]; then
+            KEYSTORE_PATH="$STORE_FILE"
+          elif [[ -f "android/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/$STORE_FILE"
+          elif [[ -f "android/app/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/app/$STORE_FILE"
+          else
+            echo "❌ Keystore file not found for storeFile=$STORE_FILE"
+            exit 1
+          fi
+
+          echo "Validating release keystore and alias..."
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "✅ Android keystore validation passed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-android
+          path: |
+            docan-*.apk
+            docan-*.aab
+
+  # ANDROID - FINAR
+  build-android-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.FINAR_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.FINAR_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.FINAR_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.FINAR_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
+          fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore secrets are incomplete, using debug signing"
+            exit 0
+          fi
+
+          mkdir -p android/app/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/app/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+
+          if keytool -importkeystore -noprompt \
+            -srckeystore android/app/keystore/upload-keystore.jks \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore /tmp/finar-keystore-check.jks \
+            -deststoretype JKS \
+            -deststorepass "$STORE_PASSWORD" \
+            -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
+            rm -f /tmp/finar-keystore-check.jks
+            cat > android/key.properties << EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=keystore/upload-keystore.jks
+          EOF
+            echo "signing=release" >> "$GITHUB_OUTPUT"
+            echo "Release signing is configured"
+          else
+            rm -f android/key.properties /tmp/finar-keystore-check.jks
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore validation failed, using debug signing"
+          fi
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-android
+          path: |
+            finar-*.apk
+            finar-*.aab
+
+  # ANDROID - KLIT
+  build-android-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.KLIT_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KLIT_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.KLIT_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.KLIT_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
+          fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore secrets are incomplete, using debug signing"
+            exit 0
+          fi
+
+          mkdir -p android/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+
+          if keytool -importkeystore -noprompt \
+            -srckeystore android/keystore/upload-keystore.jks \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore /tmp/klit-keystore-check.jks \
+            -deststoretype JKS \
+            -deststorepass "$STORE_PASSWORD" \
+            -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
+            rm -f /tmp/klit-keystore-check.jks
+            cat > android/key.properties << EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=../keystore/upload-keystore.jks
+          EOF
+            echo "signing=release" >> "$GITHUB_OUTPUT"
+            echo "Release signing is configured"
+          else
+            rm -f android/key.properties /tmp/klit-keystore-check.jks
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore validation failed, using debug signing"
+          fi
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-android
+          path: |
+            klit-*.apk
+            klit-*.aab
+
+  # ANDROID - REPSTORE
+  build-android-repstore:
+    if: ${{ github.event.inputs.build_repstore == 'true' && contains(github.event.inputs.repstore_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/repstore.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.repstore_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.repstore_commit_hash }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.REPSTORE_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.REPSTORE_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.REPSTORE_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.REPSTORE_KEY_ALIAS }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "Setting up release signing..."
+            mkdir -p android/keystore
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
+            cat > android/key.properties << EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=keystore/upload-keystore.jks
+          EOF
+            echo "signing=release" >> $GITHUB_OUTPUT
+          else
+            echo "signing=debug" >> $GITHUB_OUTPUT
+            echo "⚠️ No keystore configured, using debug signing"
+          fi
+
+      - name: Validate Android keystore
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          set -euo pipefail
+          STORE_PASSWORD=$(grep '^storePassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_PASSWORD=$(grep '^keyPassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_ALIAS=$(grep '^keyAlias=' android/key.properties | cut -d'=' -f2-)
+          STORE_FILE=$(grep '^storeFile=' android/key.properties | cut -d'=' -f2-)
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" || -z "$STORE_FILE" ]]; then
+            echo "❌ android/key.properties is missing required keystore fields"
+            exit 1
+          fi
+
+          if [[ -f "$STORE_FILE" ]]; then
+            KEYSTORE_PATH="$STORE_FILE"
+          elif [[ -f "android/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/$STORE_FILE"
+          elif [[ -f "android/app/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/app/$STORE_FILE"
+          else
+            echo "❌ Keystore file not found for storeFile=$STORE_FILE"
+            exit 1
+          fi
+
+          echo "Validating release keystore and alias..."
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "✅ Android keystore validation passed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter packages pub run build_runner build --delete-conflicting-outputs
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: repstore-android
+          path: |
+            repstore-*.apk
+            repstore-*.aab
+
+  # ANDROID - OPENTORRENT
+  build-android-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'android') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+      signing: ${{ steps.signing.outputs.signing }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Android signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.OPENTORRENT_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.OPENTORRENT_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.OPENTORRENT_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.OPENTORRENT_KEY_ALIAS }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "Setting up release signing..."
+            mkdir -p android/app
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+            cat > android/key.properties << EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+            echo "signing=release" >> $GITHUB_OUTPUT
+          else
+            echo "signing=debug" >> $GITHUB_OUTPUT
+            echo "⚠️ No keystore configured, using debug signing"
+          fi
+
+      - name: Validate Android keystore
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          set -euo pipefail
+          STORE_PASSWORD=$(grep '^storePassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_PASSWORD=$(grep '^keyPassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_ALIAS=$(grep '^keyAlias=' android/key.properties | cut -d'=' -f2-)
+          STORE_FILE=$(grep '^storeFile=' android/key.properties | cut -d'=' -f2-)
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" || -z "$STORE_FILE" ]]; then
+            echo "❌ android/key.properties is missing required keystore fields"
+            exit 1
+          fi
+
+          if [[ -f "$STORE_FILE" ]]; then
+            KEYSTORE_PATH="$STORE_FILE"
+          elif [[ -f "android/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/$STORE_FILE"
+          elif [[ -f "android/app/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/app/$STORE_FILE"
+          else
+            echo "❌ Keystore file not found for storeFile=$STORE_FILE"
+            exit 1
+          fi
+
+          echo "Validating release keystore and alias..."
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "✅ Android keystore validation passed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          mv build/app/outputs/bundle/release/app-release.aab opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-android
+          path: |
+            opentorrent-*.apk
+            opentorrent-*.aab
+
+  # ============================================================================
+  # LINUX BUILDS (ZIP, AppImage, DEB)
+  # ============================================================================
+
+  # LINUX - DOUDOU
+  build-linux-doudou:
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          # Only replace standalone RepeatMode (not AudioServiceRepeatMode) using word boundaries
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2
+          # Update locate database
+          sudo updatedb || true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          # Verify appimagetool works
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter pub get
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/x64/release
+          zip -r $GITHUB_WORKSPACE/doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          # Check for configuration files
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          # Build DEB
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          # Build AppImage
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          # Copy artifacts
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-linux
+          path: |
+            doudou-*-linux-x64.zip
+            artifacts/
+
+  # LINUX - DOCAN
+  build-linux-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2 libjsoncpp-dev rpm zsync
+          # Update locate database
+          sudo updatedb || true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          # Verify appimagetool works
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter pub get
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/x64/release
+          zip -r $GITHUB_WORKSPACE/docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          # Check for configuration files
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          # Build DEB
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          # Build AppImage
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          # Copy artifacts
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-linux
+          path: |
+            docan-*-linux-x64.zip
+            artifacts/
+
+  # LINUX - FINAR
+  build-linux-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2
+          # Update locate database
+          sudo updatedb || true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          # Verify appimagetool works
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/x64/release
+          zip -r $GITHUB_WORKSPACE/finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          # Check for configuration files
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          # Build DEB
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          # Build AppImage
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          # Copy artifacts
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-linux
+          path: |
+            finar-*-linux-x64.zip
+            artifacts/
+
+  # LINUX - KLIT
+  build-linux-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2
+          # Update locate database
+          sudo updatedb || true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          # Verify appimagetool works
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter pub get
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/x64/release
+          zip -r $GITHUB_WORKSPACE/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          # Check for configuration files
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          # Build DEB
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          # Build AppImage
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          # Copy artifacts
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-linux
+          path: |
+            klit-*-linux-x64.zip
+            artifacts/
+
+  # LINUX - OPENTORRENT
+  build-linux-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev dpkg-dev wget file squashfs-tools patchelf plocate libfuse2 libayatana-appindicator3-dev
+          # Update locate database
+          sudo updatedb || true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install appimagetool
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          # Verify appimagetool works
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux
+        run: |
+          flutter config --enable-linux-desktop
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/x64/release
+          zip -r $GITHUB_WORKSPACE/opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          # Check for configuration files
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          # Build DEB
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          # Build AppImage
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          # Copy artifacts
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+
+          # List what we have
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-linux
+          path: |
+            opentorrent-*-linux-x64.zip
+            artifacts/
+
+  # ============================================================================
+  # WEB BUILDS
+  # ============================================================================
+
+  # WEB - DOCAN
+  build-web-docan:
+    if: ${{ github.event.inputs.build_docan == 'true' && contains(github.event.inputs.docan_platforms, 'web') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/docan.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.docan_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Web
+        run: |
+          flutter pub get
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r $GITHUB_WORKSPACE/docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-web.zip web/
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docan-web
+          path: docan-*-web.zip
+
+  # WEB - FINAR
+  build-web-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'web') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Web
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r $GITHUB_WORKSPACE/finar-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-web.zip web/
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finar-web
+          path: finar-*-web.zip
+
+  # WEB - KLIT
+  build-web-klit:
+    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'web') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.klit_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Web
+        run: |
+          flutter pub get
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r $GITHUB_WORKSPACE/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-web.zip web/
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: klit-web
+          path: klit-*-web.zip
+
+  # WEB - OPENTORRENT
+  build-web-opentorrent:
+    if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'web') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/opentorrent.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Web
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r $GITHUB_WORKSPACE/opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-web.zip web/
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentorrent-web
+          path: opentorrent-*-web.zip
+
+  # ============================================================================
+  # DOCKER BUILDS
+  # ============================================================================
+
+  # DOCKER - FINAR
+  build-docker-finar:
+    if: ${{ github.event.inputs.build_finar == 'true' && contains(github.event.inputs.finar_platforms, 'docker') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.finar_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/finar
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+  # ============================================================================
+  # CREATE GITHUB RELEASE
+  # ============================================================================
+  create-release:
+    needs:
+      - build-ios-doudou
+      - build-ios-docan
+      - build-ios-finar
+      - build-ios-klit
+      - build-ios-opentorrent
+      - build-windows-doudou
+      - build-windows-docan
+      - build-windows-finar
+      - build-windows-klit
+      - build-windows-opentorrent
+      - build-macos-doudou
+      - build-macos-docan
+      - build-macos-finar
+      - build-macos-klit
+      - build-macos-opentorrent
+      - build-android-doudou
+      - build-android-docan
+      - build-android-finar
+      - build-android-klit
+      - build-android-repstore
+      - build-android-opentorrent
+      - build-linux-doudou
+      - build-linux-docan
+      - build-linux-finar
+      - build-linux-klit
+      - build-linux-opentorrent
+      - build-web-docan
+      - build-web-finar
+      - build-web-klit
+      - build-web-opentorrent
+      - build-docker-finar
+    runs-on: ubuntu-latest
+    if: always() && !cancelled()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Flatten artifacts directory
+        run: |
+          # Move .deb, .AppImage, .exe and .tar.gz files from artifacts/ to root directory
+          if [ -d "artifacts" ]; then
+            find artifacts -name "*.deb" -exec mv {} . \; 2>/dev/null || true
+            find artifacts -name "*.AppImage" -exec mv {} . \; 2>/dev/null || true
+            find artifacts -name "*.exe" -exec mv {} . \; 2>/dev/null || true
+            find artifacts -name "*.tar.gz" -exec mv {} . \; 2>/dev/null || true
+            rm -rf artifacts
+          fi
+          echo "=== Files available for release ==="
+          ls -la *.zip *.apk *.aab *.ipa *.deb *.AppImage *.exe *.tar.gz 2>/dev/null || echo "Listing files..."
+          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -ls
+
+      - name: Generate SHA256 checksums
+        run: |
+          echo "Generating SHA256 checksums..."
+          # Create checksums file with header so it's never empty
+          echo "# SHA256 checksums for build artifacts" > SHA256SUMS.txt
+          echo "# Generated on $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> SHA256SUMS.txt
+          echo "" >> SHA256SUMS.txt
+          # Add checksums for any files found
+          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec sha256sum {} \; | sed 's|\./||' >> SHA256SUMS.txt
+          echo "=== SHA256 Checksums ==="
+          cat SHA256SUMS.txt
+
+      - name: Generate build manifest JSON
+        id: manifest
+        run: |
+          BUILD_DATE=$(date +%Y-%m-%d)
+          BUILD_TIME=$(date +%H:%M:%S)
+          BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Start JSON
+          cat > build-manifest.json << 'JSONEOF'
+          {
+            "build_info": {
+              "run_number": ${{ github.run_number }},
+              "run_id": "${{ github.run_id }}",
+              "build_date": "BUILD_DATE_PLACEHOLDER",
+              "build_time": "BUILD_TIME_PLACEHOLDER",
+              "timestamp": "BUILD_TIMESTAMP_PLACEHOLDER",
+              "triggered_by": "${{ github.actor }}",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}"
+            },
+            "requested_builds": {
+              "doudou": ${{ github.event.inputs.build_doudou }},
+              "docan": ${{ github.event.inputs.build_docan }},
+              "finar": ${{ github.event.inputs.build_finar }},
+              "klit": ${{ github.event.inputs.build_klit }},
+              "repstore": ${{ github.event.inputs.build_repstore }},
+              "opentorrent": ${{ github.event.inputs.build_opentorrent }}
+            },
+            "artifacts": []
+          }
+          JSONEOF
+
+          # Replace placeholders
+          sed -i "s/BUILD_DATE_PLACEHOLDER/$BUILD_DATE/g" build-manifest.json
+          sed -i "s/BUILD_TIME_PLACEHOLDER/$BUILD_TIME/g" build-manifest.json
+          sed -i "s/BUILD_TIMESTAMP_PLACEHOLDER/$BUILD_TIMESTAMP/g" build-manifest.json
+
+          # Build artifacts array
+          ARTIFACTS_JSON="["
+          FIRST=true
+
+          for file in $(find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" \) | sort); do
+            filename=$(basename "$file")
+            filesize=$(stat -c%s "$file")
+            filesize_human=$(du -h "$file" | cut -f1)
+            sha256=$(sha256sum "$file" | cut -d' ' -f1)
+
+            # Determine platform and project from filename
+            platform="unknown"
+            project="unknown"
+            format="${filename##*.}"
+
+            case "$filename" in
+              *-windows-*) platform="windows" ;;
+              *-macos-*) platform="macos" ;;
+              *-ios-*) platform="ios" ;;
+              *-linux-*) platform="linux" ;;
+              *-web*) platform="web" ;;
+              *.apk|*.aab) platform="android" ;;
+            esac
+
+            case "$filename" in
+              doudou-*) project="doudou" ;;
+              docan-*) project="docan" ;;
+              finar-*) project="finar" ;;
+              klit-*) project="klit" ;;
+              repstore-*) project="repstore" ;;
+              opentorrent-*) project="opentorrent" ;;
+            esac
+
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              ARTIFACTS_JSON="$ARTIFACTS_JSON,"
+            fi
+
+            ARTIFACTS_JSON="$ARTIFACTS_JSON
+              {
+                \"filename\": \"$filename\",
+                \"project\": \"$project\",
+                \"platform\": \"$platform\",
+                \"format\": \"$format\",
+                \"size_bytes\": $filesize,
+                \"size_human\": \"$filesize_human\",
+                \"sha256\": \"$sha256\"
+              }"
+          done
+
+          ARTIFACTS_JSON="$ARTIFACTS_JSON
+            ]"
+
+          # Insert artifacts into JSON using jq if available, otherwise use sed
+          if command -v jq &> /dev/null; then
+            jq --argjson artifacts "$ARTIFACTS_JSON" '.artifacts = $artifacts' build-manifest.json > build-manifest-temp.json
+            mv build-manifest-temp.json build-manifest.json
+          else
+            # Fallback: replace empty artifacts array
+            sed -i "s/\"artifacts\": \[\]/\"artifacts\": $ARTIFACTS_JSON/g" build-manifest.json
+          fi
+
+          echo "=== Build Manifest ==="
+          cat build-manifest.json
+
+      - name: Generate build report
+        id: report
+        run: |
+          BUILD_DATE=$(date +%Y-%m-%d)
+          BUILD_TIME=$(date +%H:%M:%S)
+
+          # Count artifacts
+          APK_COUNT=$(find . -name "*.apk" 2>/dev/null | wc -l)
+          AAB_COUNT=$(find . -name "*.aab" 2>/dev/null | wc -l)
+          IPA_COUNT=$(find . -name "*.ipa" 2>/dev/null | wc -l)
+          ZIP_COUNT=$(find . -name "*.zip" 2>/dev/null | wc -l)
+          DEB_COUNT=$(find . -name "*.deb" 2>/dev/null | wc -l)
+          APPIMAGE_COUNT=$(find . -name "*.AppImage" 2>/dev/null | wc -l)
+          EXE_COUNT=$(find . -name "*.exe" 2>/dev/null | wc -l)
+          TOTAL_COUNT=$((APK_COUNT + AAB_COUNT + IPA_COUNT + ZIP_COUNT + DEB_COUNT + APPIMAGE_COUNT + EXE_COUNT))
+
+          # List all artifacts with sizes
+          echo "## 📦 Build Artifacts" > release_notes.md
+          echo "" >> release_notes.md
+          echo "| File | Size |" >> release_notes.md
+          echo "|------|------|" >> release_notes.md
+          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md
+
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # Build summary
+          echo "## 📊 Build Summary" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "| Metric | Value |" >> release_notes.md
+          echo "|--------|-------|" >> release_notes.md
+          echo "| 📅 Build Date | $BUILD_DATE |" >> release_notes.md
+          echo "| ⏰ Build Time | $BUILD_TIME UTC |" >> release_notes.md
+          echo "| 📱 APKs | $APK_COUNT |" >> release_notes.md
+          echo "| 📦 AABs | $AAB_COUNT |" >> release_notes.md
+          echo "| 🍎 IPAs | $IPA_COUNT |" >> release_notes.md
+          echo "| 🗜️ ZIPs | $ZIP_COUNT |" >> release_notes.md
+          echo "| 🪟 Installers (EXE) | $EXE_COUNT |" >> release_notes.md
+          echo "| 🐧 DEBs | $DEB_COUNT |" >> release_notes.md
+          echo "| 🖼️ AppImages | $APPIMAGE_COUNT |" >> release_notes.md
+          echo "| **Total Artifacts** | **$TOTAL_COUNT** |" >> release_notes.md
+
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # Project status section
+          echo "## 🏗️ Build Status by Project" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # Doudou
+          if [ "${{ github.event.inputs.build_doudou }}" == "true" ]; then
+            echo "### Doudou" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-doudou.outputs.version || needs.build-windows-doudou.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-doudou.outputs.status || 'skipped' }} ${{ needs.build-windows-doudou.outputs.duration && format('({0} min)', needs.build-windows-doudou.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-doudou.outputs.status || 'skipped' }} ${{ needs.build-macos-doudou.outputs.duration && format('({0} min)', needs.build-macos-doudou.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-doudou.outputs.status || 'skipped' }} ${{ needs.build-ios-doudou.outputs.duration && format('({0} min)', needs.build-ios-doudou.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-doudou.outputs.status || 'skipped' }} ${{ needs.build-android-doudou.outputs.duration && format('({0} min)', needs.build-android-doudou.outputs.duration) || '' }} - Signing: ${{ needs.build-android-doudou.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-doudou.outputs.status || 'skipped' }} ${{ needs.build-linux-doudou.outputs.duration && format('({0} min)', needs.build-linux-doudou.outputs.duration) || '' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Docan
+          if [ "${{ github.event.inputs.build_docan }}" == "true" ]; then
+            echo "### Docan" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-docan.outputs.version || needs.build-windows-docan.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-docan.outputs.status || 'skipped' }} ${{ needs.build-windows-docan.outputs.duration && format('({0} min)', needs.build-windows-docan.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-docan.outputs.status || 'skipped' }} ${{ needs.build-macos-docan.outputs.duration && format('({0} min)', needs.build-macos-docan.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-docan.outputs.status || 'skipped' }} ${{ needs.build-ios-docan.outputs.duration && format('({0} min)', needs.build-ios-docan.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-docan.outputs.status || 'skipped' }} ${{ needs.build-android-docan.outputs.duration && format('({0} min)', needs.build-android-docan.outputs.duration) || '' }} - Signing: ${{ needs.build-android-docan.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-docan.outputs.status || 'skipped' }} ${{ needs.build-linux-docan.outputs.duration && format('({0} min)', needs.build-linux-docan.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Web: ${{ needs.build-web-docan.outputs.status || 'skipped' }} ${{ needs.build-web-docan.outputs.duration && format('({0} min)', needs.build-web-docan.outputs.duration) || '' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Finar
+          if [ "${{ github.event.inputs.build_finar }}" == "true" ]; then
+            echo "### Finar" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-finar.outputs.version || needs.build-windows-finar.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-finar.outputs.status || 'skipped' }} ${{ needs.build-windows-finar.outputs.duration && format('({0} min)', needs.build-windows-finar.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-finar.outputs.status || 'skipped' }} ${{ needs.build-macos-finar.outputs.duration && format('({0} min)', needs.build-macos-finar.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-finar.outputs.status || 'skipped' }} ${{ needs.build-ios-finar.outputs.duration && format('({0} min)', needs.build-ios-finar.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-finar.outputs.status || 'skipped' }} ${{ needs.build-android-finar.outputs.duration && format('({0} min)', needs.build-android-finar.outputs.duration) || '' }} - Signing: ${{ needs.build-android-finar.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-finar.outputs.status || 'skipped' }} ${{ needs.build-linux-finar.outputs.duration && format('({0} min)', needs.build-linux-finar.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Web: ${{ needs.build-web-finar.outputs.status || 'skipped' }} ${{ needs.build-web-finar.outputs.duration && format('({0} min)', needs.build-web-finar.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Docker: ${{ needs.build-docker-finar.outputs.status || 'skipped' }} ${{ needs.build-docker-finar.outputs.duration && format('({0} min)', needs.build-docker-finar.outputs.duration) || '' }} - \\\`docker pull ghcr.io/${{ github.repository_owner }}/finar:latest\\\`" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Klit
+          if [ "${{ github.event.inputs.build_klit }}" == "true" ]; then
+            echo "### Klit" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-klit.outputs.version || needs.build-windows-klit.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-klit.outputs.status || 'skipped' }} ${{ needs.build-windows-klit.outputs.duration && format('({0} min)', needs.build-windows-klit.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-klit.outputs.status || 'skipped' }} ${{ needs.build-macos-klit.outputs.duration && format('({0} min)', needs.build-macos-klit.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-klit.outputs.status || 'skipped' }} ${{ needs.build-ios-klit.outputs.duration && format('({0} min)', needs.build-ios-klit.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-klit.outputs.status || 'skipped' }} ${{ needs.build-android-klit.outputs.duration && format('({0} min)', needs.build-android-klit.outputs.duration) || '' }} - Signing: ${{ needs.build-android-klit.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-klit.outputs.status || 'skipped' }} ${{ needs.build-linux-klit.outputs.duration && format('({0} min)', needs.build-linux-klit.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Web: ${{ needs.build-web-klit.outputs.status || 'skipped' }} ${{ needs.build-web-klit.outputs.duration && format('({0} min)', needs.build-web-klit.outputs.duration) || '' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Repstore
+          if [ "${{ github.event.inputs.build_repstore }}" == "true" ]; then
+            echo "### Repstore" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-repstore.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-repstore.outputs.status || 'skipped' }} ${{ needs.build-android-repstore.outputs.duration && format('({0} min)', needs.build-android-repstore.outputs.duration) || '' }} - Signing: ${{ needs.build-android-repstore.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # OpenTorrent
+          if [ "${{ github.event.inputs.build_opentorrent }}" == "true" ]; then
+            echo "### OpenTorrent" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-opentorrent.outputs.version || needs.build-windows-opentorrent.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-windows-opentorrent.outputs.duration && format('({0} min)', needs.build-windows-opentorrent.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-macos-opentorrent.outputs.duration && format('({0} min)', needs.build-macos-opentorrent.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-ios-opentorrent.outputs.duration && format('({0} min)', needs.build-ios-opentorrent.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-android-opentorrent.outputs.duration && format('({0} min)', needs.build-android-opentorrent.outputs.duration) || '' }} - Signing: ${{ needs.build-android-opentorrent.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-linux-opentorrent.outputs.duration && format('({0} min)', needs.build-linux-opentorrent.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Web: ${{ needs.build-web-opentorrent.outputs.status || 'skipped' }} ${{ needs.build-web-opentorrent.outputs.duration && format('({0} min)', needs.build-web-opentorrent.outputs.duration) || '' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # Warnings section
+          echo "## ⚠️ Notes & Warnings" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # Check for failed builds
+          FAILED_BUILDS=""
+          if [ "${{ needs.build-ios-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-iOS"; fi
+          if [ "${{ needs.build-ios-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-iOS"; fi
+          if [ "${{ needs.build-ios-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-iOS"; fi
+          if [ "${{ needs.build-ios-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-iOS"; fi
+          if [ "${{ needs.build-ios-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-iOS"; fi
+          if [ "${{ needs.build-windows-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Windows"; fi
+          if [ "${{ needs.build-windows-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Windows"; fi
+          if [ "${{ needs.build-windows-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Windows"; fi
+          if [ "${{ needs.build-windows-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Windows"; fi
+          if [ "${{ needs.build-windows-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Windows"; fi
+          if [ "${{ needs.build-macos-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-macOS"; fi
+          if [ "${{ needs.build-macos-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-macOS"; fi
+          if [ "${{ needs.build-macos-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-macOS"; fi
+          if [ "${{ needs.build-macos-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-macOS"; fi
+          if [ "${{ needs.build-macos-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-macOS"; fi
+          if [ "${{ needs.build-android-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Android"; fi
+          if [ "${{ needs.build-android-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Android"; fi
+          if [ "${{ needs.build-android-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Android"; fi
+          if [ "${{ needs.build-android-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Android"; fi
+          if [ "${{ needs.build-android-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Android"; fi
+          if [ "${{ needs.build-linux-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Linux"; fi
+          if [ "${{ needs.build-linux-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Linux"; fi
+          if [ "${{ needs.build-linux-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Linux"; fi
+          if [ "${{ needs.build-linux-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Linux"; fi
+          if [ "${{ needs.build-linux-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Linux"; fi
+          if [ "${{ needs.build-web-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Web"; fi
+          if [ "${{ needs.build-web-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Web"; fi
+          if [ "${{ needs.build-web-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Web"; fi
+          if [ "${{ needs.build-web-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Web"; fi
+          if [ "${{ needs.build-android-repstore.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Repstore-Android"; fi
+
+          if [ -n "$FAILED_BUILDS" ]; then
+            echo "🔴 **Failed builds:**$FAILED_BUILDS" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Check for debug signing
+          DEBUG_SIGNED=""
+          if [ "${{ needs.build-android-doudou.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Doudou"; fi
+          if [ "${{ needs.build-android-docan.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Docan"; fi
+          if [ "${{ needs.build-android-finar.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Finar"; fi
+          if [ "${{ needs.build-android-klit.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Klit"; fi
+          if [ "${{ needs.build-android-repstore.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Repstore"; fi
+          if [ "${{ needs.build-android-opentorrent.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED OpenTorrent"; fi
+
+          if [ -n "$DEBUG_SIGNED" ]; then
+            echo "🟡 **Debug signed (missing keystore):**$DEBUG_SIGNED" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
+          # Note about macOS and iOS unsigned builds
+          echo "🍎 **macOS and iOS builds are unsigned** - macOS: Users need to right-click and select 'Open' to bypass Gatekeeper, or run \`xattr -cr /path/to/App.app\`. iOS: IPAs require sideloading with AltStore, Sideloadly, or a signing service." >> release_notes.md
+          echo "" >> release_notes.md
+
+          if [ -z "$FAILED_BUILDS" ] && [ -z "$DEBUG_SIGNED" ]; then
+            echo "✅ All requested builds completed successfully with release signing!" >> release_notes.md
+          fi
+
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 📋 Platform Information" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "| Platform | Formats | Architecture |" >> release_notes.md
+          echo "|----------|---------|--------------|" >> release_notes.md
+          echo "| Windows | ZIP, EXE Installer | x64 |" >> release_notes.md
+          echo "| macOS | ZIP (unsigned) | arm64/x64 |" >> release_notes.md
+          echo "| iOS | IPA (unsigned) | arm64 |" >> release_notes.md
+          echo "| Android | APK, AAB | arm64-v8a, armeabi-v7a, x86_64 |" >> release_notes.md
+          echo "| Linux | ZIP, DEB, AppImage | x86_64 |" >> release_notes.md
+          echo "| Web | ZIP | Universal |" >> release_notes.md
+          echo "| Docker | ghcr.io package | x86_64 |" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 🐳 Docker" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Pull the Finar Docker image:" >> release_notes.md
+          echo "\`\`\`bash" >> release_notes.md
+          echo "docker pull ghcr.io/${{ github.repository_owner }}/finar:latest" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Run the container:" >> release_notes.md
+          echo "\`\`\`bash" >> release_notes.md
+          echo "docker run -d -p 8080:80 ghcr.io/${{ github.repository_owner }}/finar:latest" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 🔐 Verification" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "SHA256 checksums are provided in \`SHA256SUMS.txt\`. To verify a download:" >> release_notes.md
+          echo "\`\`\`bash" >> release_notes.md
+          echo "sha256sum -c SHA256SUMS.txt --ignore-missing" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Build metadata is available in \`build-manifest.json\`." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "*Built with Flutter stable channel on GitHub Actions*" >> release_notes.md
+          echo "*Run #${{ github.run_number }} - Triggered by @${{ github.actor }}*" >> release_notes.md
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }} - ${{ steps.date.outputs.date }}"
+          body_path: release_notes.md
+          fail_on_unmatched_files: false
+          files: |
+            *.zip
+            *.apk
+            *.aab
+            *.ipa
+            *.deb
+            *.AppImage
+            *.exe
+            *.tar.gz
+            SHA256SUMS.txt
+            build-manifest.json
+
+  # ============================================================================
+  # PUSH UNSTABLE AUR PACKAGES (from this build's release)
+  # ============================================================================
+  push-aur-unstable:
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: always() && !cancelled() && needs.create-release.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate unstable AUR PKGBUILDs
+        run: python build.py --target aur --unstable-aur-only --verbose
+
+      - name: Generate .SRCINFO for unstable AUR packages
+        run: |
+          shopt -s nullglob
+          for pkg in aur-packages/*-unstable/; do
+            pkg=$(basename "$pkg")
+            if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
+            docker run --rm \
+              -v "$PWD/aur-packages/$pkg:/pkg:rw" \
+              archlinux:latest \
+              bash -c "pacman -Syu --noconfirm base-devel 2>/dev/null; useradd -m -u 1000 builduser; chown -R builduser:builduser /pkg; su builduser -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'"
+          done
+
+      - name: Setup SSH for AUR
+        env:
+          AUR_SSH_KEY_BASE64: ${{ secrets.AUR_SSH_KEY_BASE64 }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "$AUR_SSH_KEY_BASE64" | base64 -d > ~/.ssh/aur_key
+          chmod 600 ~/.ssh/aur_key
+          ssh-keyscan -t ed25519,rsa aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Push unstable packages to AUR
+        env:
+          AUR_SSH_KEY_PASSWORD: ${{ secrets.AUR_SSH_KEY_PASSWORD }}
+        run: |
+          set -e
+          eval "$(ssh-agent -s)"
+          printf '%s' "$AUR_SSH_KEY_PASSWORD" | ssh-add ~/.ssh/aur_key 2>/dev/null || true
+          export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
+          mkdir -p aur-push
+          shopt -s nullglob
+          for pkg in aur-packages/*-unstable/; do
+            pkg=$(basename "$pkg")
+            if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
+            echo "Updating AUR package: $pkg"
+            if ! git clone --depth 1 "ssh://aur@aur.archlinux.org/${pkg}.git" "aur-push/$pkg" 2>&1; then
+              echo "::warning::Clone failed for $pkg (create package on AUR first or check push access)"
+              continue
+            fi
+            cp -f "aur-packages/$pkg/PKGBUILD" "aur-packages/$pkg/.SRCINFO" "aur-push/$pkg/" 2>/dev/null || true
+            cd "aur-push/$pkg"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add PKGBUILD .SRCINFO
+            if ! git diff --staged --quiet; then
+              git commit -m "Update to latest from GitHub releases (Build Apps)"
+              git push origin master
+            else
+              echo "No changes for $pkg"
+            fi
+            cd ../..
+          done
+          rm -rf aur-push
