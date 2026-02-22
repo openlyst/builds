@@ -35,7 +35,114 @@ python build.py --target all --verbose               # Verbose logging
 
 ### GitHub Actions
 
-Run the "Build All Repositories" workflow to update all repositories at once, or use the individual workflows for specific targets.
+Run the "Build All Repositories" workflow to update all repositories at once, or use the "Build Apps" workflow to build app binaries. Configure the following in **Actions** (workflow run form) and **Settings → Secrets and variables → Actions** as needed.
+
+#### Build All Repositories (`build-unified.yml`)
+
+**Inputs** (shown in the workflow run form):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `target` | Build target | `all` |
+| | Options: `all`, `altstore`, `fdroid`, `homebrew`, `aur` | |
+| `platform` | Homebrew platform (only used when target is homebrew) | `both` |
+| | Options: `both`, `macOS`, `Linux` | |
+| `calculate_hashes` | Calculate SHA256 hashes (slower) | `false` |
+
+**Secrets** (Settings → Secrets and variables → Actions) — required only for AUR pushes:
+
+| Secret | Description |
+|--------|-------------|
+| `AUR_SSH_KEY_BASE64` | Base64-encoded SSH private key with push access to AUR packages |
+| `AUR_SSH_KEY_PASSWORD` | Passphrase for the key (leave empty if unencrypted) |
+
+#### Build Apps (`build.yml`)
+
+**Inputs** (workflow run form) — every variable:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `build_doudou` | Build Doudou | `false` |
+| `doudou_platforms` | Doudou platforms (comma-separated: ios, android, windows, linux, macos) | `ios,android,windows,linux,macos` |
+| `doudou_commit_hash` | Doudou commit hash (empty = latest) | `''` |
+| `build_docan` | Build Docan | `false` |
+| `docan_platforms` | Docan platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
+| `docan_commit_hash` | Docan commit hash (empty = latest) | `''` |
+| `build_finar` | Build Finar | `false` |
+| `finar_platforms` | Finar platforms (comma-separated: ios, android, windows, linux, macos, web, docker) | `ios,android,windows,linux,macos,web,docker` |
+| `finar_commit_hash` | Finar commit hash (empty = latest) | `''` |
+| `build_klit` | Build Klit | `false` |
+| `klit_platforms` | Klit platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
+| `klit_commit_hash` | Klit commit hash (empty = latest) | `''` |
+| `build_repstore` | Build Repstore | `false` |
+| `repstore_platforms` | Repstore platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
+| `repstore_commit_hash` | Repstore commit hash (empty = latest) | `''` |
+| `build_opentorrent` | Build OpenTorrent | `false` |
+| `opentorrent_platforms` | OpenTorrent platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
+| `opentorrent_commit_hash` | OpenTorrent commit hash (empty = latest) | `''` |
+
+**Secrets** (Settings → Secrets and variables → Actions) — every variable:
+
+AUR (for AUR package pushes):
+
+| Secret | Description |
+|--------|-------------|
+| `AUR_SSH_KEY_BASE64` | Base64-encoded SSH private key with push access to AUR packages |
+| `AUR_SSH_KEY_PASSWORD` | Passphrase for the key (leave empty if unencrypted) |
+
+Android signing (optional; omit for unsigned builds). Doudou:
+
+| Secret | Description |
+|--------|-------------|
+| `DOUDOU_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `DOUDOU_KEYSTORE_PASSWORD` | Keystore password |
+| `DOUDOU_KEY_PASSWORD` | Key password |
+| `DOUDOU_KEY_ALIAS` | Key alias in the keystore |
+
+Docan:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCAN_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `DOCAN_KEYSTORE_PASSWORD` | Keystore password |
+| `DOCAN_KEY_PASSWORD` | Key password |
+| `DOCAN_KEY_ALIAS` | Key alias in the keystore |
+
+Finar:
+
+| Secret | Description |
+|--------|-------------|
+| `FINAR_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `FINAR_KEYSTORE_PASSWORD` | Keystore password |
+| `FINAR_KEY_PASSWORD` | Key password |
+| `FINAR_KEY_ALIAS` | Key alias in the keystore |
+
+Klit:
+
+| Secret | Description |
+|--------|-------------|
+| `KLIT_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `KLIT_KEYSTORE_PASSWORD` | Keystore password |
+| `KLIT_KEY_PASSWORD` | Key password |
+| `KLIT_KEY_ALIAS` | Key alias in the keystore |
+
+Repstore:
+
+| Secret | Description |
+|--------|-------------|
+| `REPSTORE_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `REPSTORE_KEYSTORE_PASSWORD` | Keystore password |
+| `REPSTORE_KEY_PASSWORD` | Key password |
+| `REPSTORE_KEY_ALIAS` | Key alias in the keystore |
+
+OpenTorrent:
+
+| Secret | Description |
+|--------|-------------|
+| `OPENTORRENT_KEYSTORE_BASE64` | Base64-encoded Android keystore file |
+| `OPENTORRENT_KEYSTORE_PASSWORD` | Keystore password |
+| `OPENTORRENT_KEY_PASSWORD` | Key password |
+| `OPENTORRENT_KEY_ALIAS` | Key alias in the keystore |
 
 ---
 
