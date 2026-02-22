@@ -181,7 +181,7 @@ def sanitize_name(name: str, style: str = "class") -> str:
 class AltStoreBuilder:
     """Builder for AltStore repository JSON"""
     
-    def __init__(self, client: OpenLystClient, base_repo_url: str = "https://raw.githubusercontent.com/justacalico/Openlyst-more-builds/main/repo"):
+    def __init__(self, client: OpenLystClient, base_repo_url: str = "https://raw.githubusercontent.com/openlyst/builds/main/repo"):
         self.client = client
         self.base_repo_url = base_repo_url
     
@@ -438,7 +438,7 @@ class AltStoreBuilder:
 class FDroidBuilder:
     """Builder for F-Droid repository metadata"""
     
-    def __init__(self, client: OpenLystClient, base_repo_url: str = "https://raw.githubusercontent.com/justacalico/Openlyst-more-builds/main/fdroid-repo"):
+    def __init__(self, client: OpenLystClient, base_repo_url: str = "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo"):
         self.client = client
         self.base_repo_url = base_repo_url
     
@@ -860,7 +860,7 @@ AUR_PACKAGES = {
 }
 
 # GitHub repo for build workflow releases (unstable AUR packages use these download URLs)
-GITHUB_RELEASES_API = "https://api.github.com/repos/justacalico/Openlyst-more-builds/releases"
+GITHUB_RELEASES_API = "https://api.github.com/repos/openlyst/builds/releases"
 
 
 def get_latest_linux_zip_from_github(slug: str, session: Optional[requests.Session] = None) -> Optional[tuple]:
@@ -1086,7 +1086,7 @@ sha256sums=('SKIP')
             app_name, bundle_subdir, icon_path, pkgdesc, categories, keywords
         )
         content = f'''# Maintainer: OpenLyst <https://openlyst.ink>
-# Unstable build from GitHub releases: https://github.com/justacalico/Openlyst-more-builds/releases
+# Unstable build from GitHub releases: https://github.com/openlyst/builds/releases
 pkgname={pkgname}
 pkgver={pkgver}
 pkgrel=1
@@ -1279,7 +1279,7 @@ Examples:
     parser.add_argument(
         '--repo-url',
         type=str,
-        default='https://raw.githubusercontent.com/justacalico/Openlyst-more-builds/main/repo',
+        default='https://raw.githubusercontent.com/openlyst/builds/main/repo',
         help='Base URL for AltStore repository'
     )
     parser.add_argument(

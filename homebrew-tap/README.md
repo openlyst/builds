@@ -7,19 +7,19 @@ This is a Homebrew tap for macOS and Linux applications from [OpenLyst](https://
 First, add this tap to your Homebrew:
 
 ```bash
-brew tap justacalico/openlyst-more-builds https://github.com/justacalico/openlyst-more-builds.git
+brew tap openlyst/builds https://github.com/openlyst/builds.git
 ```
 
 Then install any available formula:
 
 ```bash
-brew install justacalico/openlyst-more-builds/app-name
+brew install openlyst/builds/app-name
 ```
 
 Or for cask applications on macOS:
 
 ```bash
-brew install --cask justacalico/openlyst-more-builds/app-name
+brew install --cask openlyst/builds/app-name
 ```
 
 ## Available Formulae
@@ -31,8 +31,8 @@ The formulae are automatically generated from the OpenLyst API. Check the `Formu
 Once installed, you can:
 
 - Update the tap: `brew update`
-- List available formulae: `brew search justacalico/openlyst-more-builds/`
-- Install an application: `brew install justacalico/openlyst-more-builds/app-name`
+- List available formulae: `brew search openlyst/builds/`
+- Install an application: `brew install openlyst/builds/app-name`
 - Uninstall an application: `brew uninstall app-name`
 
 ## Automated Updates
