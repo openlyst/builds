@@ -7,38 +7,13 @@
   "website": "https://openlyst.ink",
   "tintColor": "#dc2626",
   "featuredApps": [
-    "docan",
     "doudou",
+    "docan",
     "finar",
     "klit",
     "opentorrent"
   ],
   "apps": [
-    {
-      "name": "Docan",
-      "bundleIdentifier": "docan",
-      "developerName": "OpenLyst Developer",
-      "subtitle": "AI chat app with Liquid Glass UI",
-      "localizedDescription": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
-      "iconURL": "https://openlyst.ink/icons/Docan/icon.png",
-      "tintColor": "#6366f1",
-      "category": "other",
-      "versions": [
-        {
-          "version": "3.0.0",
-          "buildVersion": "1",
-          "date": "2026-01-11",
-          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-4/docan-3.0.0-2026-02-08-ios-unsigned.ipa",
-          "size": 27,
-          "localizedDescription": "# 3.0.0\n\n## New Features\n\n### AI Providers\n- Added DeepSeek AI support with `deepseek-chat` and `deepseek-reasoner` models.\n- Added LM Studio support with OpenAI-compatible API.\n- Dynamic model fetching from API.\n\n### Image Creator\n- Added dedicated Image Creator screen for generating images with AI.\n- Supports Gemini and OpenAI DALL-E providers.\n\n### Playbooks\n- Added Playbooks: User-created YAML integrations for extending Docan.\n- Create custom API integrations with a simple YAML SDK.\n\n### Attachments & Drag-and-Drop\n- Added support for attachments in chat.\n- Drag and drop files directly onto the app."
-        }
-      ],
-      "screenshots": [
-        "https://openlyst.ink/icons/Docan/chat.png",
-        "https://openlyst.ink/icons/Docan/chats.png",
-        "https://openlyst.ink/icons/Docan/providers.png"
-      ]
-    },
     {
       "name": "Doudou",
       "bundleIdentifier": "doudou",
@@ -81,6 +56,31 @@
       ]
     },
     {
+      "name": "Docan",
+      "bundleIdentifier": "docan",
+      "developerName": "OpenLyst Developer",
+      "subtitle": "AI chat app with Liquid Glass UI",
+      "localizedDescription": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
+      "iconURL": "/icons/Docan/icon.png",
+      "tintColor": "#6366f1",
+      "category": "other",
+      "versions": [
+        {
+          "version": "3.0.0",
+          "buildVersion": "1",
+          "date": "2026-01-11",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-4/docan-3.0.0-2026-02-08-ios-unsigned.ipa",
+          "size": 27,
+          "localizedDescription": "# 3.0.0\n\n## New Features\n\n### AI Providers\n- Added DeepSeek AI support with `deepseek-chat` and `deepseek-reasoner` models.\n- Added LM Studio support with OpenAI-compatible API.\n- Dynamic model fetching from API.\n\n### Image Creator\n- Added dedicated Image Creator screen for generating images with AI.\n- Supports Gemini and OpenAI DALL-E providers.\n\n### Playbooks\n- Added Playbooks: User-created YAML integrations for extending Docan.\n- Create custom API integrations with a simple YAML SDK.\n\n### Attachments & Drag-and-Drop\n- Added support for attachments in chat.\n- Drag and drop files directly onto the app."
+        }
+      ],
+      "screenshots": [
+        "/icons/Docan/chat.png",
+        "/icons/Docan/chats.png",
+        "/icons/Docan/providers.png"
+      ]
+    },
+    {
       "name": "Finar",
       "bundleIdentifier": "finar",
       "developerName": "OpenLyst Developer",
@@ -114,10 +114,18 @@
       "developerName": "OpenLyst Developer",
       "subtitle": "E926 API client",
       "localizedDescription": "Klit is the successor to BaoBao, built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
-      "iconURL": "https://openlyst.ink/icons/Klit/icon.png",
+      "iconURL": "/icons/Klit/icon.png",
       "tintColor": "#ff6b35",
       "category": "other",
       "versions": [
+        {
+          "version": "8.0.0",
+          "buildVersion": "1",
+          "date": "2026-02-23",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-13/klit-8.0.0-2026-02-23-ios-unsigned.ipa",
+          "size": 15341029,
+          "localizedDescription": "# 8.0.0\n\n- README: expanded with features, prerequisites, getting started, and build instructions\n- Settings Account: visual refresh; Accounts section with description and filled Add button\n- Settings Account (mobile): fix semantics assertion (parentDataDirty) by giving embedded account list bounded height\n- OLED theme: use pure black for all backgrounds and bar\n- Android: opt out of edge-to-edge so status bar can be hidden on Android 15+\n- Fix black-on-black text in Settings Account, Feeds, Profile, Favorites, and Blacklist empty states\n- Android: hide system status bar for a cleaner full-screen look\n- Settings (Android): system back button returns to main settings list from sub-pages\n- Post detail: show instantly when opened from list using already-loaded post data\n- Feeds: multi-host support; feed list global (same for all accounts)\n- Post detail: preload comments; comments sheet shows them immediately and lazy-loads more on scroll\n- Post detail: vote buttons and score/comment indicators use thumbs up / thumbs down icons\n- Post grid: cache dimensions from post preview aspect ratio; wrap each cell in AspectRatio\n- Performance: offload API JSON parsing to background isolate; storage JSON decode moved to background isolate\n- macOS: minimum deployment target raised to 11.0\n- Post detail: tag chips coloured by tag category; preload preview and full image for adjacent posts\n- I-finished milk animation and Gallery button for finished posts in Settings Behavior\n- App starts in guest mode; login page only when user chooses to log in\n- Mobile nav bar: default Home, Search, Profile, Settings; More menu opens Hot, Popular, Favorites, Feeds\n- Profile: three tabs (Main, Uploads, Favorites) with pill-style tab bar\n- Search history and feeds per-account\n- Feeds: Both type (image + video); And tags and Or tags\n- Settings: Back button when opened as route; reorder categories; Feeds in desktop sidebar\n- Account options: Test connection; Account management in Settings > Account only\n- Optional I-finished button (default off) with milk-style animation and optional camera photo\n- Feeds: e621 file-type metatags for image/video; create image or video feeds with include/exclude tags\n- Post detail: View profile opens in-app profile; resolve uploader username by ID; uploader profile card\n- OLED theme: pure black across shell, nav bar, sidebar, settings, search, profile, login, post cards\n- Profile page redesign: hero card with avatar, stats grid, account info, styled action buttons\n- Settings Account: avatar glow and border from profile image; show user profile picture when available\n- Post detail: tapping a tag navigates to search tab; e621-style DText in descriptions and comments\n- Download: Android/iOS save to photo gallery; desktop save to Downloads/openlyst/klit with Open folder\n- Complete UI redo: responsive UI layer with layout scope, shell, widgets, pages; desktop sidebar, mobile bottom nav\n- New unified UI system (single codebase for desktop and mobile); major performance optimizations\n- New navbar engine; stateless"
+        },
         {
           "version": "7.0.0",
           "buildVersion": "1",
@@ -127,10 +135,18 @@
           "localizedDescription": "# 7.0.0\n\n- Updates version to **7.0.0**.\n- Updated description to \"E926 API client\"\n\n## Added\n\n### 🔄 Pull-to-Refresh on Mobile Home Page\n- Added native pull-down-to-refresh support on the mobile Home page\n- Swipe down from the top of the post grid to refresh latest posts\n- Smooth refresh indicator animation with haptic feedback\n\n### ⌨️ Keyboard Controls for Mobile Post Viewer\nAdded keyboard navigation support to the mobile post detail viewer, matching the desktop experience:\n\n**Navigation:**\n- `A` / `←` — Previous post\n- `D` / `→` — Next post\n\n**Actions:**\n- `F` — Toggle favorite\n- `W` / `↑` — Upvote (toggle)\n- `S` / `↓` — Downvote (toggle)\n\n### 📱 Material Style Navigation Bar\n- Added a proper Material-style bottom navigation bar when Material UI mode is enabled\n- Full-width design with simple icon/label layout (no floating pill style)\n- Clean top border separator instead of shadow/blur effects\n- Consistent with Android Material Design guidelines\n\n### ⚙️ Material Style Settings Page\n- Settings page now responds to UI style mode\n- Material mode uses solid containers without blur effects\n- Clean borders and simple dividers in Material mode\n- Removes glass effects and shadows for better performance on lower-end devices\n\n### 🌈 Rating Aura on Post Cards\n- Posts now display a colored glow/aura around the card based on content rating\n- **Green** — Safe content\n- **Orange** — Questionable content\n- **Red** — Explicit content\n- Removed the text badge from the bottom-left corner for a cleaner look\n- Rating is now instantly visible at a glance without reading text\n- **Liquid Glass mode**: Enhanced glass-like aura with layered glows, soft outer bloom, and subtle highlight reflection\n- **Material mode**: Simple, performance-focused aura effect\n\n### 📐 Centralized Post Grid Settings\n- New **POST GRID** section in Settings with comprehensive controls:\n  - **Auto Mode** — Automatically adjusts grid columns based on screen width (2 cols for phones, 3 for tablets, up to 8 for large monitors)\n  - **Grid Size** — Manual control for number of columns (disabled when Auto Mode is on)\n  - **Spacing** — Slider to control gap between post cards (0-16pt)\n  - **Padding** — Slider to control outer padding around the grid (0-24pt)\n  - **Score Threshold** — Configurable minimum score filter for latest posts (0-100, default: 20). Posts automatically reload when changed.\n- Added same POST GRID settings to desktop settings page (Content section)\n- Removed per-page grid size controls from Home, Hot, Popular, Favorites, and Search pages\n- Removed grid size selectors from desktop toolbar (Home, Hot, Popular, Favorites, Search)\n- All pages now use centralized settings for consistent appearance\n\n### 🚫 Blacklist Management\n- New **BLACKLIST** section in Settings (mobile and desktop):\n  - **Enable Blacklist** — Toggle to enable/disable blacklist filtering globally\n  - **Manage Blacklist** — Opens dedicated page to edit blacklist rules\n- **Blacklist Settings Page** with full management:\n  - **Sync from Account** — Pull blacklisted tags from your e621/e926 account\n  - **Text Editor** — Edit blacklist entries directly (one tag/rule per line)\n  - **Help Dialog** — Documents blacklist syntax (AND logic, rating filters, wildcards, metatags)\n  - Shows active rule count and enabled status\n- All pages automatically filter posts based on blacklist rules\n\n## Fixed\n\n### 🎊 Left-Handed Mode Confetti Position\n- Fixed confetti animation playing from the wrong side when left-handed mode is enabled\n- Confetti now correctly originates near the favorite button position in both left and right-handed modes\n\n### 📐 Auto Mode Grid Scaling\n- Fixed auto mode only using up to 4 columns even on large screens\n- Auto mode now scales properly: 2 cols (phones) → 3 (tablets) → 4-5 (small desktops) → 6-8 (large monitors)\n- Grid now properly responds to window resizing using LayoutBuilder\n\n### 🔍 Tag Suggestions Overhaul\n- **Fixed `-tag` and `~tag` prefix handling**: Tag suggestions now properly work when typing exclusion tags (e.g., `-scat`, `-young`) or optional tags (`~tag`)\n- **Fixed suggestions closing unexpectedly**: Removed aggressive focus-based closing that caused suggestions to disappear while typing\n- **Fixed suggestions appearing when not wanted**: Suggestions now only appear when actively typing a tag (2+ characters)\n- **Tap outside to close**: Suggestions close when tapping anywhere outside the suggestion list\n- **Better word detection**: Properly extracts the current word being typed, handling cursor position correctly\n- **Prefix preservation**: When selecting a suggestion for `-tag` or `~tag`, the prefix is correctly preserved\n\n### 🖼️ Full Resolution Image Loading\n- Fixed mobile post viewer not loading full resolution images\n- Mobile now uses the same resolution priority as desktop: full file → sample → preview\n- Fixes issues with small images (e.g., 512x512) not displaying at full quality on alternative servers"
         }
       ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Klit can take a photo when you mark a post as \"I finished\" (optional feature in Settings).",
+          "NSPhotoLibraryAddUsageDescription": "Klit saves images and videos to your photo library when you tap Download.",
+          "NSPhotoLibraryUsageDescription": "Klit saves images and videos to your photo library when you tap Download."
+        }
+      },
       "screenshots": [
-        "https://openlyst.ink/icons/Klit/home.png",
-        "https://openlyst.ink/icons/Klit/popular.png",
-        "https://openlyst.ink/icons/Klit/post.png"
+        "/icons/Klit/home.png",
+        "/icons/Klit/popular.png",
+        "/icons/Klit/post.png"
       ]
     },
     {
