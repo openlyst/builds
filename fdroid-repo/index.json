@@ -4,7 +4,7 @@
     "description": "Free and open source Android applications from OpenLyst",
     "icon": "icon.png",
     "address": "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo",
-    "timestamp": 1771822996204,
+    "timestamp": 1771881071087,
     "version": 21
   },
   "requests": {
@@ -12,20 +12,6 @@
     "uninstall": []
   },
   "apps": [
-    {
-      "packageName": "docan",
-      "name": "Docan",
-      "summary": "AI chat app with Liquid Glass UI",
-      "icon": "https://openlyst.ink/icons/Docan/icon.png",
-      "description": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
-      "license": "Unknown",
-      "categories": [
-        "System"
-      ],
-      "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
-    },
     {
       "packageName": "doudou",
       "name": "Doudou",
@@ -37,8 +23,22 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
+    },
+    {
+      "packageName": "docan",
+      "name": "Docan",
+      "summary": "AI chat app with Liquid Glass UI",
+      "icon": "/icons/Docan/icon.png",
+      "description": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
+      "license": "Unknown",
+      "categories": [
+        "System"
+      ],
+      "webSite": "https://openlyst.ink",
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
     },
     {
       "packageName": "finar",
@@ -51,22 +51,22 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
     },
     {
       "packageName": "klit",
       "name": "Klit",
       "summary": "E926 API client",
-      "icon": "https://openlyst.ink/icons/Klit/icon.png",
+      "icon": "/icons/Klit/icon.png",
       "description": "Klit is the successor to BaoBao, built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
       "license": "Unknown",
       "categories": [
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
     },
     {
       "packageName": "opentorrent",
@@ -79,8 +79,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
     },
     {
       "packageName": "repstore",
@@ -93,28 +93,14 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771822996204,
-      "lastUpdated": 1771822996204
+      "added": 1771881071087,
+      "lastUpdated": 1771881071087
     }
   ],
   "packages": {
-    "docan": [
-      {
-        "added": 1771822994404,
-        "apkName": "docan-3.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "docan",
-        "size": 27,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "3.0.0"
-      }
-    ],
     "doudou": [
       {
-        "added": 1771822994555,
+        "added": 1771881068933,
         "apkName": "doudou-14.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -126,7 +112,7 @@
         "versionName": "14.0.0"
       },
       {
-        "added": 1771822994620,
+        "added": 1771881069004,
         "apkName": "doudou-13.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -138,7 +124,7 @@
         "versionName": "13.0.0"
       },
       {
-        "added": 1771822994683,
+        "added": 1771881069076,
         "apkName": "doudou-12.0.1.apk",
         "hash": "",
         "hashType": "sha256",
@@ -150,9 +136,23 @@
         "versionName": "12.0.1"
       }
     ],
+    "docan": [
+      {
+        "added": 1771881069231,
+        "apkName": "docan-3.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "docan",
+        "size": 27,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "3.0.0"
+      }
+    ],
     "finar": [
       {
-        "added": 1771822994965,
+        "added": 1771881069558,
         "apkName": "finar-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -164,7 +164,7 @@
         "versionName": "2.0.0"
       },
       {
-        "added": 1771822995042,
+        "added": 1771881069620,
         "apkName": "finar-1.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -178,7 +178,19 @@
     ],
     "klit": [
       {
-        "added": 1771822995222,
+        "added": 1771881069800,
+        "apkName": "klit-8.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "klit",
+        "size": 100422301,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "8.0.0"
+      },
+      {
+        "added": 1771881070132,
         "apkName": "klit-7.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -192,7 +204,7 @@
     ],
     "opentorrent": [
       {
-        "added": 1771822995391,
+        "added": 1771881070311,
         "apkName": "opentorrent-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -204,7 +216,7 @@
         "versionName": "2.0.0"
       },
       {
-        "added": 1771822995456,
+        "added": 1771881070374,
         "apkName": "opentorrent-1.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -218,7 +230,7 @@
     ],
     "repstore": [
       {
-        "added": 1771822995609,
+        "added": 1771881070599,
         "apkName": "repstore-3.2.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -230,7 +242,7 @@
         "versionName": "3.2.0"
       },
       {
-        "added": 1771822995953,
+        "added": 1771881070807,
         "apkName": "repstore-3.1.0.apk",
         "hash": "",
         "hashType": "sha256",
