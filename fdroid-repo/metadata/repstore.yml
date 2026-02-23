@@ -11,12 +11,19 @@ AutoName: RepStore
 Summary: Alternative App Store for Android
 
 Description: |
-    RepStore is an alternative app store for iOS*/Android built around AltStore-compatible repositories. Browse repositories and install APKs in one place.
+    RepStore is an alternative app store for Android built around AltStore-compatible repositories. Browse repositories and install APKs in one place.
 
 RepoType: git
 Repo: 
 
 Builds:
+
+  - versionName: '3.2.0'
+    versionCode: 1
+    commit: v3.2.0
+    subdir: app
+    gradle:
+      - yes
 
   - versionName: '3.1.0'
     versionCode: 1
@@ -25,5 +32,5 @@ Builds:
     gradle:
       - yes
 
-CurrentVersion: '3.1.0'
+CurrentVersion: '3.2.0'
 CurrentVersionCode: 1
