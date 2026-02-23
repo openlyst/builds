@@ -4,7 +4,7 @@
     "description": "Free and open source Android applications from OpenLyst",
     "icon": "icon.png",
     "address": "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo",
-    "timestamp": 1771386706871,
+    "timestamp": 1771822996204,
     "version": 21
   },
   "requests": {
@@ -23,8 +23,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     },
     {
       "packageName": "doudou",
@@ -37,8 +37,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     },
     {
       "packageName": "finar",
@@ -51,8 +51,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     },
     {
       "packageName": "klit",
@@ -65,8 +65,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     },
     {
       "packageName": "opentorrent",
@@ -79,34 +79,34 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     },
     {
       "packageName": "repstore",
       "name": "RepStore",
       "summary": "Alternative App Store for Android",
       "icon": "https://gitlab.com/Openlyst/repstore/-/raw/main/icon.png?ref_type=heads",
-      "description": "RepStore is an alternative app store for iOS*/Android built around AltStore-compatible repositories. Browse repositories and install APKs in one place.",
+      "description": "RepStore is an alternative app store for Android built around AltStore-compatible repositories. Browse repositories and install APKs in one place.",
       "license": "Unknown",
       "categories": [
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1771386706871,
-      "lastUpdated": 1771386706871
+      "added": 1771822996204,
+      "lastUpdated": 1771822996204
     }
   ],
   "packages": {
     "docan": [
       {
-        "added": 1771386705228,
+        "added": 1771822994404,
         "apkName": "docan-3.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "docan",
-        "size": 59819549,
+        "size": 27,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "3.0.0"
@@ -114,37 +114,37 @@
     ],
     "doudou": [
       {
-        "added": 1771386705392,
+        "added": 1771822994555,
         "apkName": "doudou-14.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "doudou",
-        "size": 87948822,
+        "size": 9,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "14.0.0"
       },
       {
-        "added": 1771386705556,
+        "added": 1771822994620,
         "apkName": "doudou-13.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "doudou",
-        "size": 86726178,
+        "size": 9,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "13.0.0"
       },
       {
-        "added": 1771386705716,
+        "added": 1771822994683,
         "apkName": "doudou-12.0.1.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "doudou",
-        "size": 85852190,
+        "size": 27,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "12.0.1"
@@ -152,25 +152,25 @@
     ],
     "finar": [
       {
-        "added": 1771386705881,
+        "added": 1771822994965,
         "apkName": "finar-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "finar",
-        "size": 100213080,
+        "size": 9,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "2.0.0"
       },
       {
-        "added": 1771386706036,
+        "added": 1771822995042,
         "apkName": "finar-1.1.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "finar",
-        "size": 99338865,
+        "size": 27,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "1.1.0"
@@ -178,13 +178,13 @@
     ],
     "klit": [
       {
-        "added": 1771386706211,
+        "added": 1771822995222,
         "apkName": "klit-7.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "klit",
-        "size": 100165388,
+        "size": 27,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "7.0.0"
@@ -192,25 +192,25 @@
     ],
     "opentorrent": [
       {
-        "added": 1771386706376,
+        "added": 1771822995391,
         "apkName": "opentorrent-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "opentorrent",
-        "size": 59366162,
+        "size": 9,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "2.0.0"
       },
       {
-        "added": 1771386706540,
+        "added": 1771822995456,
         "apkName": "opentorrent-1.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "opentorrent",
-        "size": 57238307,
+        "size": 27,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "1.0.0"
@@ -218,13 +218,25 @@
     ],
     "repstore": [
       {
-        "added": 1771386706702,
+        "added": 1771822995609,
+        "apkName": "repstore-3.2.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "repstore",
+        "size": 62816170,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "3.2.0"
+      },
+      {
+        "added": 1771822995953,
         "apkName": "repstore-3.1.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "repstore",
-        "size": 62043825,
+        "size": 62766886,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "3.1.0"
