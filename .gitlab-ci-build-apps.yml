@@ -59,18 +59,18 @@ create-release:
   script:
     - |
       if [ -d "artifacts" ]; then
-        find artifacts -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec mv {} . \; 2>/dev/null || true
+        find artifacts -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec mv {} . \; 2>/dev/null || true
         rm -rf artifacts
       fi
-      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -print
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -print
     - |
       echo "# SHA256 checksums" > SHA256SUMS.txt
-      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec sha256sum {} \; >> SHA256SUMS.txt || true
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec sha256sum {} \; >> SHA256SUMS.txt || true
     - |
       echo "## Build #${CI_PIPELINE_ID} - $(date +%Y-%m-%d)" > release_notes.md
       echo "" >> release_notes.md
       echo "| File | Size |" >> release_notes.md
-      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md || true
+      find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md || true
       echo "" >> release_notes.md
       echo "SHA256 checksums in SHA256SUMS.txt." >> release_notes.md
   release:
@@ -84,6 +84,7 @@ create-release:
       - "*.aab"
       - "*.ipa"
       - "*.deb"
+      - "*.rpm"
       - "*.AppImage"
       - "*.exe"
       - "*.tar.gz"
