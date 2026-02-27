@@ -25,11 +25,19 @@
       "category": "other",
       "versions": [
         {
+          "version": "15.0.0",
+          "buildVersion": "1",
+          "date": "2026-02-27",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-22/doudou-15.0.0-2026-02-27-ios-unsigned.ipa",
+          "size": 14326947,
+          "localizedDescription": "# 15.0.0\n\n## Highlights\n\n- **YouTube Music**: New provider (select in Server type). Search and stream without login. Home shows Harmony-style layout with Quick picks, Popular playlists, Trending; search shows Artists, Playlists, Songs.\n- **General options** (Settings > General): Toggles for Lyrics, Downloads, Volume on player bar, Queue button, Shuffle & repeat (desktop). YouTube Music can be re-enabled on Windows/Linux (off by default on desktop).\n- **Onboarding**: Language -> Theme (System/Light/Dark/OLED) -> Accent colour -> Get Started. Localized (English, 中文, Русский). When not logged in: welcome message and no-server screen after Get Started.\n- **Multi-server**: Add, edit, remove, switch saved servers without reload. Settings > Server lists saved servers; legacy single-server prefs migrate on first load.\n- **Detail headers**: Gradient derived from cover image (dominant color, darkened). Fades in over 280ms; no flicker. Shuffle/Play are circular icon-only; Shuffle in horizontal scroll on narrow panels.\n- **Artist/album/playlist**: Clickable artist names (no underline) open artist page when in library. Albums/Songs tab is animated segmented control (purple pill, 220ms). Tab bar full width, equal segments.\n- **Now playing**: Single responsive screen (mobile & desktop, breakpoint 900px). Compact: carousel, progress, controls, queue/favorite/lyrics/more. Expanded: album + controls left, Up Next / Lyrics right. Download in more-options: start, cancel, or delete download. Volume control. Close button clears queue and stops playback.\n- **Now playing polish (release pass)**:\n  - Desktop uses blurred artwork background and improved spacing for smaller heights.\n  - Play/pause visual treatment unified (no gradient orb styling).\n  - Volume controls support keyboard shortcuts and toggle-style panels.\n  - Queue and lyrics panels now hide/show contextually based on availability.\n- **YouTube Music follow-based home**:\n  - Home supports followed content and guidance when library is empty.\n  - Follow actions for artist/album/playlist with per-server persistence.\n  - Mix-style playlists are excluded from follow surfaces.\n- **Search**: Full-width bar. Shows albums, artists, songs for all providers; YouTube Music also shows community playlists. Server URL validation rejects YouTube Music with clear message.\n- **Dates**: Year/month/day (e.g. 2025/02/21) for album Added, Settings build date, log names.\n\n## Design & UI\n\n- **Organic refined** look: AppTokens (Plus Jakarta Sans + Nunito, teal accent, warm dark palette, soft radii). Same tokens on desktop and mobile; light, dark, OLED.\n- **OLED**: Pure black (#000000) everywhere when OLED theme selected. Dark mode uses charcoal (#1C1C1E).\n- **Gemini-style**: Dark palette (#0a0a0c page, #0e0e11 sidebar, etc.). Sidebar: purple logo box, rounded nav tiles, Library label, Settings at bottom. Settings sidebar: section headers, rounded cards, status (e.g. Connected).\n- **Dialogs**: Apple-style frosted glass (blur, rounded corners, scale/fade). showAppDialog / showAppConfirmDialog / showAppChoiceDialog (Apple* deprecated). Select Language, Theme, accent/custom color redesigned.\n- **Mobile**: extendBody so content under nav/player bars; bars use frosted glass. Bottom padding so content not covered by nav bar.\n- **Empty states**: Full-width centered icon and text. Home: no header; content starts with quick access and sections.\n- **Settings**: iOS-style grouped list (Server, Playback, Appearance, About), sub-pages. Connection shows Jellyfin username (User.Name) or \"Logged in\". Connection box adapts by provider (Local, YouTube Music, Jellyfin/Plex/Subsonic).\n- **Queue/lyrics overlays**:\n  - Current track is pinned at the top of queue presentations.\n  - Lyrics open at the current playback position.\n  - Lyrics tabs/buttons are hidden when lyrics are unavailable.\n\n## Fixes\n\n- **Queue**: Clear queue also clears current track and emits null so player bar hides.\n- **Layout**: Mobile nav no longer overflows on resize (Expanded + FittedBox). KeyedSubtree on breakpoint switch avoids _elements.contains assertion.\n- **Dialogs**: showAppleDialog (and Add/Edit server) use actionsBuilder so Navigator.pop uses dialog context-fixes \"Looking up a deactivated widget's ancestor\" when caller screen already closed.\n- **Search**: Bar no longer Expanded inside PageTemplate (layout crash); use fixed width (320px).\n- **Server settings**: Subsonic/Navidrome config data shown via displayServerUrl and displayUsername on login/restore.\n- **Now playing**: Album/artist lines under title have no underline. Lyrics: no yellow underline (TextDecoration.none).\n- **Now playing**: Volume overlay no longer blocks slider drag; tapping outside closes the overlay.\n- **Now playing**: Added mobile parity for The Mind Electric easter egg behavior.\n- **Settings**: Reliable scrolling (AlwaysScrollableScrollPhysics, ConstrainedBox). Add/switch server no longer kicks you off Settings (shell keeps selection).\n\n## Removed\n\n- Android Auto, voice commands (Google Assistant, deep links, MEDIA_PLAY_FROM_SEARCH, shortcuts).\n- Dynamic Isle / mini player island. Standalone Local Music screen (config in Settings only).\n- Refresh buttons (Library, Albums, Artists, Playlists, Tracks, detail, Rescan). Login screen (main shell always; Connect/Disconnect in Settings).\n- Unused: cached_image.dart, apple_design/glassmorphism.dart. General settings section (OLED/Show album art moved to Theme dialog). Mobile-only UI.\n\n## Linux\n\n- YouTube Music disabled in Server type and saved list by default; if current server was YT Music on startup, app switches or disconnects.\n- YouTube Music playback: media_kit (mpv), setlocale(LC_NUMERIC, \"C\") before mpv to avoid \"Non-C locale\" crash. Fallback: ~/.config/mpv/mpv.conf with ao=pulse,pipewire,alsa. Packaged .desktop uses LC_ALL=C.\n- Other Linux playback: audioplayers (GStreamer). Install gstreamer, gst-plugins-base, gst-plugins-good, gst-libav.\n\n## Refactors & performance\n\n- **Single codebase**: One set of Dart UI for mobile and desktop; sidebar >=768px, bottom nav on mobile. No ui/desktop vs ui/mobile split. Navigation in lib/services; theme in lib/ui/theme.\n- **Dialog API**: showAppDialog, showAppConfirmDialog, showAppChoiceDialog, AppDialogOption. Theme/layout in app_tokens.dart, desktop_theme.dart.\n- **Startup**: System info logging after first frame. Isolates for dominant color, cache/API JSON (Jellyfin, local). List keys, lazy tab loading, Selector for playlists/artists/albums. Now playing: AnimatedBuilder for skip/snap-back (no setState per tick); blur limited to header.\n- **YouTube Music**: Prefer 96-160 kbps stream; position-based completion fallback on mobile for auto-play/next.\n- **Lint**: mounted checks after async (media_details, settings_page); braces in now_playing lyrics.\n- **Cleanup**: Add-to-playlist consolidated (Create New Playlist in DesktopLayout; used from now-playing and home). ArtistDetailScreen vs ArtistDetailsPage clarified. Page template title: TextDecoration.none."
+        },
+        {
           "version": "14.0.0",
           "buildVersion": "1",
           "date": "2026-02-16",
           "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-31/doudou-14.0.0-2026-02-16-ios-unsigned.ipa",
-          "size": 9,
+          "size": 55124,
           "localizedDescription": "# 14.0.0\n\n- New UI for both desktop and mobile.\n- Don't show desktop sidebar when on small screens.\n- Remove logging.\n- Expand the about Doudou section.\n- Port the old navbar.\n- Settings scales.\n- New app layouts.\n- Port the now playing screen.\n- Spec bump to 14.0.0.\n- Mobile track now goes left from right.\n- Lyrics icon is now a microphone; only shown when lyrics are available.\n- Fixed animation when reversing a song."
         },
         {
@@ -49,6 +57,12 @@
           "localizedDescription": "# 12.0.1\n\n- Updated donate URL | https://openlyst.ink/support\n- Version bump to 12.0.1\n- Haptic feedback for favorite button"
         }
       ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Doudou needs to access local network to connect to your Jellyfin server."
+        }
+      },
       "screenshots": [
         "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
         "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
@@ -61,7 +75,7 @@
       "developerName": "OpenLyst Developer",
       "subtitle": "AI chat app with Liquid Glass UI",
       "localizedDescription": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
-      "iconURL": "/icons/Docan/icon.png",
+      "iconURL": "https://gitlab.com/Openlyst/docan/-/raw/main/assets/icon_1024.png",
       "tintColor": "#6366f1",
       "category": "other",
       "versions": [
@@ -75,9 +89,9 @@
         }
       ],
       "screenshots": [
-        "/icons/Docan/chat.png",
-        "/icons/Docan/chats.png",
-        "/icons/Docan/providers.png"
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/chat.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/chats.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/providers.png?ref_type=heads"
       ]
     },
     {
@@ -90,6 +104,14 @@
       "tintColor": "#6366f1",
       "category": "other",
       "versions": [
+        {
+          "version": "3.0.0",
+          "buildVersion": "1",
+          "date": "2026-02-24",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-14/finar-1.1.0-2026-02-24-ios-unsigned.ipa",
+          "size": 15713894,
+          "localizedDescription": "# 3.0.0\n\n# Added\n- Who's watching? screen for multiple Jellyfin accounts (Netflix-style profile picker)\n- Multiple accounts: save and switch between several server/user profiles\n- Add profile and Manage profiles flows; sign out removes current profile from device\n- Watchlist row on home (desktop and mobile); home data includes watchlist, invalidated when toggling from detail\n- Sleep timer: Settings > Playback (Off, 15/30/45/60 min, End of current); player overlay shows remaining time and Cancel\n- Theme and appearance: Settings > Appearance — Theme (System / Light / Dark), Use system accent, Accent color (Teal, Purple, Blue, Pink, Orange)\n\n# Changed\n- Unified UI: removed separate desktop/ and mobile/ page folders; single responsive pages (home, settings, detail, player, library, music_library, downloads) with sidebar on wide screens and bottom nav/single column on narrow\n- Library page (mobile): list-style cards with icon, type label, and item count instead of large gradient grid\n- Upgraded dependencies: dio, riverpod, flutter_riverpod, intl, package_info_plus, share_plus, gamepads; Riverpod 3 migration with legacy imports; share_plus 12 SharePlus API; AsyncValue.when for null fallbacks\n- App startup: with 2+ saved profiles, Who's watching is shown instead of auto-restoring; with 1 profile, behavior unchanged\n- Sidebar and Settings: Switch profile opens Who's watching; Sign out removes current profile (with confirmation)\n\n# Fixed\n- Theme and accent: theme mode (System/Light/Dark) and accent color now apply across the app; settings load before first frame so stored theme is used on launch; \"Use system accent\" is persisted via setUseSystemAccent\n- Detail more-options sheet: Download, Share, and Media Info now work; Add to Playlist / Report Issue show \"Coming soon\"\n- Home media card Add button adds/removes item from watchlist with SnackBar feedback\n- Music library track row: favorite button toggles favorite and refreshes list\n- Music player bar: Shuffle shuffles playlist and plays from start; Repeat cycles off → one → all; More shows \"Coming soon\" SnackBar\n- Queue \"Now Playing\" tap triggers play/pause; library sort button no longer appears disabled\n- Who's watching: show current session as a profile when saved list was empty (recovery); avoid row overflow with horizontal scroll or wrap\n- Login page: hide scrollbar on form scrollables; fix contrast (solid dark form card so white text is readable); Quick Connect tip uses textSecondary for readability"
+        },
         {
           "version": "2.0.0",
           "buildVersion": "1",
@@ -114,10 +136,18 @@
       "developerName": "OpenLyst Developer",
       "subtitle": "E926 API client",
       "localizedDescription": "Klit is the successor to BaoBao, built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
-      "iconURL": "/icons/Klit/icon.png",
+      "iconURL": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/icon.png?ref_type=heads",
       "tintColor": "#ff6b35",
       "category": "other",
       "versions": [
+        {
+          "version": "8.0.1",
+          "buildVersion": "1",
+          "date": "2026-02-27",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-21/klit-8.0.1-2026-02-27-ios-unsigned.ipa",
+          "size": 15348206,
+          "localizedDescription": "# 8.0.1\n\n- top bar refactor"
+        },
         {
           "version": "8.0.0",
           "buildVersion": "1",
@@ -144,9 +174,9 @@
         }
       },
       "screenshots": [
-        "/icons/Klit/home.png",
-        "/icons/Klit/popular.png",
-        "/icons/Klit/post.png"
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/home.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/popular.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/post.png?ref_type=heads"
       ]
     },
     {
