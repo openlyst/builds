@@ -172,17 +172,23 @@ jobs:
         run: |
           flutter pub get
 
-            # Try to run codegen if it exists
-            dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
+          # Work around terminate_restart Swift compile failure on newer Flutter/Xcode toolchains.
+          PLUGIN_SWIFT=$(find "$HOME/.pub-cache" -type f -path "*/terminate_restart*/ios/Classes/TerminateRestartPlugin.swift" | head -n 1)
+          if [ -n "$PLUGIN_SWIFT" ] && [ -f "$PLUGIN_SWIFT" ]; then
+            perl -i -pe 's/if let flutterEngine = registrar\.messenger\(\) as\??!? FlutterEngine \{/if true {\n            let flutterEngine = registrar.messenger() as! FlutterEngine/' "$PLUGIN_SWIFT"
+          fi
 
-            # Try running make/build scripts if they exist
-            if [ -f "Makefile" ]; then
-              make ios || true
-            fi
+          # Try to run codegen if it exists
+          dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
 
-            if [ -f "scripts/build-ios.sh" ]; then
-              bash scripts/build-ios.sh || true
-            fi
+          # Try running make/build scripts if they exist
+          if [ -f "Makefile" ]; then
+            make ios || true
+          fi
+
+          if [ -f "scripts/build-ios.sh" ]; then
+            bash scripts/build-ios.sh || true
+          fi
 
           flutter build ios --release --no-codesign
 
@@ -2357,7 +2363,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev rpm wget file squashfs-tools patchelf plocate libfuse2 libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev libmpv-dev dpkg-dev rpm wget file squashfs-tools patchelf plocate libfuse2 libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libayatana-appindicator3-dev
           # Update locate database
           sudo updatedb || true
 
