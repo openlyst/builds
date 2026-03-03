@@ -2032,7 +2032,21 @@ jobs:
           cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
           KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
           mkdir -p "$HOME/.config/.android"
-          ln -sf "$KEYSTORE_ABS_PATH" "$HOME/.config/.android/debug.keystore"
+          # Some Klit Android configs resolve release signing to the default debug keystore path.
+          # Ensure that path is a valid debug keystore (AndroidDebugKey/android), not a symlink
+          # to the release keystore, to avoid password/alias mismatch during packageRelease.
+          rm -f "$HOME/.config/.android/debug.keystore"
+          if [ ! -f "$HOME/.config/.android/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.config/.android/debug.keystore" \
+              -storepass android \
+              -alias AndroidDebugKey \
+              -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 >/dev/null 2>&1
+          fi
 
           if keytool -importkeystore -noprompt \
             -srckeystore android/keystore/upload-keystore.jks \
