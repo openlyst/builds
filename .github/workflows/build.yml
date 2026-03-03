@@ -431,6 +431,17 @@ jobs:
 
           flutter pub get
           enforce_ios14
+          if [ -f ios/Runner/AppDelegate.swift ]; then
+            # Some Klit revisions import `workmanager`, while newer plugin modules are exposed as
+            # `workmanager_apple`. Make import resilient to either module name.
+            sed -E -i '' "/^import[[:space:]]+workmanager$/{
+              s/^import[[:space:]]+workmanager$/#if canImport(workmanager)\\
+import workmanager\\
+#elseif canImport(workmanager_apple)\\
+import workmanager_apple\\
+#endif/
+            }" ios/Runner/AppDelegate.swift
+          fi
           (
             while true; do
               enforce_ios14
