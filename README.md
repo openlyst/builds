@@ -72,7 +72,7 @@ Run the "Build All Repositories" workflow to update all repositories at once, or
 | `finar_platforms` | Finar platforms (comma-separated: ios, android, windows, linux, macos, web, docker) | `ios,android,windows,linux,macos,web,docker` |
 | `finar_commit_hash` | Finar commit hash (empty = latest) | `''` |
 | `build_klit` | Build Klit | `false` |
-| `klit_platforms` | Klit platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
+| `klit_platforms` | Klit platforms (comma-separated: ios, android, windows, linux, macos) | `ios,android,windows,linux,macos` |
 | `klit_commit_hash` | Klit commit hash (empty = latest) | `''` |
 | `build_repstore` | Build Repstore | `false` |
 | `repstore_platforms` | Repstore platforms (comma-separated: ios, android, windows, linux, macos, web) | `ios,android,windows,linux,macos,web` |
