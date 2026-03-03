@@ -2011,12 +2011,11 @@ jobs:
             -deststorepass "$STORE_PASSWORD" \
             -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
             rm -f /tmp/klit-keystore-check.jks
-            cat > android/key.properties << EOF
-storePassword=$STORE_PASSWORD
-keyPassword=$KEY_PASSWORD
-keyAlias=$KEY_ALIAS
-storeFile=keystore/upload-keystore.jks
-EOF
+            printf '%s\n' \
+              "storePassword=$STORE_PASSWORD" \
+              "keyPassword=$KEY_PASSWORD" \
+              "keyAlias=$KEY_ALIAS" \
+              "storeFile=keystore/upload-keystore.jks" > android/key.properties
             cp android/key.properties android/app/key.properties
             echo "signing=release" >> "$GITHUB_OUTPUT"
             echo "Release signing is configured"
