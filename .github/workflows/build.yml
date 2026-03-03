@@ -406,20 +406,45 @@ jobs:
 
       - name: Build iOS (No Code Signing)
         run: |
-          # workmanager_apple requires iOS 14.0+; enforce target in cloned project before pod install.
-          if [ -f ios/Podfile ]; then
-            if grep -q "^platform :ios" ios/Podfile; then
-              sed -i '' "s/^platform :ios, '.*'/platform :ios, '14.0'/" ios/Podfile
-            else
-              sed -i '' "1s;^;platform :ios, '14.0'\\n;" ios/Podfile
+          # workmanager_apple requires iOS 14.0+. Flutter migrations can rewrite iOS files
+          # during build, so enforce this target before and throughout the build step.
+          enforce_ios14() {
+            if [ -f ios/Podfile ]; then
+              if grep -Eq "^[[:space:]]*platform :ios" ios/Podfile; then
+                sed -E -i '' "s/^[[:space:]]*platform :ios, ['\"][^'\"]+['\"]/platform :ios, '14.0'/" ios/Podfile
+              elif grep -Eq "^[[:space:]]*# platform :ios" ios/Podfile; then
+                sed -E -i '' "s/^[[:space:]]*# platform :ios, ['\"][^'\"]+['\"]/platform :ios, '14.0'/" ios/Podfile
+              else
+                printf "platform :ios, '14.0'\n%s" "$(cat ios/Podfile)" > ios/Podfile
+              fi
             fi
-          fi
-          if [ -f ios/Flutter/AppFrameworkInfo.plist ]; then
-            /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 14.0" ios/Flutter/AppFrameworkInfo.plist || \
-            /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 14.0" ios/Flutter/AppFrameworkInfo.plist
-          fi
+
+            if [ -f ios/Flutter/AppFrameworkInfo.plist ]; then
+              /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 14.0" ios/Flutter/AppFrameworkInfo.plist >/dev/null 2>&1 || \
+              /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 14.0" ios/Flutter/AppFrameworkInfo.plist >/dev/null 2>&1
+            fi
+
+            if [ -f ios/Runner.xcodeproj/project.pbxproj ]; then
+              sed -E -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]+;/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/g" ios/Runner.xcodeproj/project.pbxproj
+            fi
+          }
+
           flutter pub get
+          enforce_ios14
+          (
+            while true; do
+              enforce_ios14
+              sleep 1
+            done
+          ) &
+          ENFORCER_PID=$!
+          set +e
           flutter build ios --release --no-codesign
+          BUILD_EXIT=$?
+          set -e
+          kill "$ENFORCER_PID" >/dev/null 2>&1 || true
+          wait "$ENFORCER_PID" 2>/dev/null || true
+          exit "$BUILD_EXIT"
 
       - name: Create unsigned IPA
         run: |
