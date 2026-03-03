@@ -1993,12 +1993,13 @@ jobs:
             exit 0
           fi
 
-          mkdir -p android/keystore
+          mkdir -p android/keystore android/app/keystore
           if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
             echo "signing=debug" >> "$GITHUB_OUTPUT"
             echo "Keystore base64 is invalid, using debug signing"
             exit 0
           fi
+          cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
 
           if keytool -importkeystore -noprompt \
             -srckeystore android/keystore/upload-keystore.jks \
@@ -2011,18 +2012,48 @@ jobs:
             -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
             rm -f /tmp/klit-keystore-check.jks
             cat > android/key.properties << EOF
-          storePassword=$STORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
-          storeFile=../keystore/upload-keystore.jks
-          EOF
+storePassword=$STORE_PASSWORD
+keyPassword=$KEY_PASSWORD
+keyAlias=$KEY_ALIAS
+storeFile=keystore/upload-keystore.jks
+EOF
+            cp android/key.properties android/app/key.properties
             echo "signing=release" >> "$GITHUB_OUTPUT"
             echo "Release signing is configured"
           else
-            rm -f android/key.properties /tmp/klit-keystore-check.jks
+            rm -f android/key.properties android/app/key.properties /tmp/klit-keystore-check.jks
             echo "signing=debug" >> "$GITHUB_OUTPUT"
             echo "Keystore validation failed, using debug signing"
           fi
+
+      - name: Validate Android keystore
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          set -euo pipefail
+          STORE_PASSWORD=$(grep '^storePassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_PASSWORD=$(grep '^keyPassword=' android/key.properties | cut -d'=' -f2-)
+          KEY_ALIAS=$(grep '^keyAlias=' android/key.properties | cut -d'=' -f2-)
+          STORE_FILE=$(grep '^storeFile=' android/key.properties | cut -d'=' -f2-)
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" || -z "$STORE_FILE" ]]; then
+            echo "❌ android/key.properties is missing required keystore fields"
+            exit 1
+          fi
+
+          if [[ -f "$STORE_FILE" ]]; then
+            KEYSTORE_PATH="$STORE_FILE"
+          elif [[ -f "android/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/$STORE_FILE"
+          elif [[ -f "android/app/$STORE_FILE" ]]; then
+            KEYSTORE_PATH="android/app/$STORE_FILE"
+          else
+            echo "❌ Keystore file not found for storeFile=$STORE_FILE"
+            exit 1
+          fi
+
+          echo "Validating release keystore and alias..."
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
+          echo "✅ Android keystore validation passed"
 
       - name: Get version from pubspec
         id: version
