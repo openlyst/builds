@@ -2025,6 +2025,9 @@ jobs:
             exit 0
           fi
           cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
+          KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
+          mkdir -p "$HOME/.config/.android"
+          ln -sf "$KEYSTORE_ABS_PATH" "$HOME/.config/.android/debug.keystore"
 
           if keytool -importkeystore -noprompt \
             -srckeystore android/keystore/upload-keystore.jks \
@@ -2040,7 +2043,7 @@ jobs:
               "storePassword=$STORE_PASSWORD" \
               "keyPassword=$KEY_PASSWORD" \
               "keyAlias=$KEY_ALIAS" \
-              "storeFile=keystore/upload-keystore.jks" > android/key.properties
+              "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
             cp android/key.properties android/app/key.properties
             echo "signing=release" >> "$GITHUB_OUTPUT"
             echo "Release signing is configured"
