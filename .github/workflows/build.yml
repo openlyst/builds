@@ -435,6 +435,9 @@ jobs:
             # Some Klit revisions import `workmanager`, while newer plugin modules are exposed as
             # `workmanager_apple`. Make import resilient to either module name.
             perl -0777 -i -pe 's/^import\\s+workmanager$/#if canImport(workmanager)\\nimport workmanager\\n#elseif canImport(workmanager_apple)\\nimport workmanager_apple\\n#endif/m' ios/Runner/AppDelegate.swift
+            # Newer workmanager_apple versions removed registerTask; map old calls to
+            # the current periodic task registration API.
+            perl -0777 -i -pe 's/WorkmanagerPlugin\\.registerTask\\(withIdentifier:\\s*"([^"]+)"\\)/WorkmanagerPlugin.registerPeriodicTask(withIdentifier: "$1", frequency: nil)/g' ios/Runner/AppDelegate.swift
           fi
           (
             while true; do
@@ -2114,6 +2117,14 @@ jobs:
       - name: Build APK
         run: |
           flutter pub get
+          if [ -f android/app/build.gradle.kts ]; then
+            # ABI split outputs can break app bundle pre-bundle resolution on newer AGP.
+            # Remove splits for CI release builds to keep a single deterministic output.
+            perl -0777 -i -pe 's/\n\s*splits\s*\{\n\s*abi\s*\{\n\s*isEnable\s*=\s*true\n\s*reset\(\)\n\s*include\("arm64-v8a", "armeabi-v7a"\)\n\s*isUniversalApk\s*=\s*true\n\s*\}\n\s*\}\n/\n/s' android/app/build.gradle.kts
+          fi
+          if [ -f android/app/build.gradle ]; then
+            perl -0777 -i -pe 's/\n\s*splits\s*\{\n\s*abi\s*\{\n(?:.|\n)*?\n\s*\}\n\s*\}\n/\n/s' android/app/build.gradle
+          fi
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/flutter-apk/app-release.apk klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
