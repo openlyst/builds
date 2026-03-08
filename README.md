@@ -292,3 +292,14 @@ pip install -r requirements.txt
 └── .github/workflows/
     └── build-unified.yml      # Unified GitHub Actions workflow
 ```
+
+## Rolling Release Metadata
+
+`build.yml` now treats GitHub Actions run metadata as release identity:
+
+- `BUILD_NAME`: UTC date version (`YYYY.M.D`)
+- `BUILD_NUMBER`: `github.run_number`
+- `RELEASE_TAG`: `build-${BUILD_NUMBER}`
+- `COMMIT_SHA`: workflow source commit
+
+The workflow passes `--build-name` / `--build-number` for Flutter builds where supported and publishes a machine-readable `build-manifest.json` for downstream sync/publish automation.
