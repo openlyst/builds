@@ -292,27 +292,3 @@ pip install -r requirements.txt
 └── .github/workflows/
     └── build-unified.yml      # Unified GitHub Actions workflow
 ```
-
-## Rolling Release Metadata
-
-`build.yml` now treats GitHub Actions run metadata as release identity:
-
-- `BUILD_NAME`: UTC date version (`YYYY.M.D`)
-- `BUILD_NUMBER`: `github.run_number`
-- `RELEASE_TAG`: `build-${BUILD_NUMBER}`
-- `COMMIT_SHA`: workflow source commit
-
-The workflow passes `--build-name` / `--build-number` for Flutter builds where supported and publishes a machine-readable `build-manifest.json` for downstream sync/publish automation.
-
-## Fully Automatic Build Watcher
-
-`poll-and-dispatch.yml` runs every 5 minutes and watches configured source repos in `config/watched-repos.json`.
-
-- If a watched repo `main` commit changed, it dispatches `build.yml` for that app only.
-- First run seeds `state/watched-heads.json` and does not trigger a build burst.
-- Each published GitHub release triggers the `copy-downloads` GitLab pipeline automatically through `trigger-copy-downloads.yml`.
-
-Required GitHub secrets for mirror trigger:
-- `COPY_DOWNLOADS_GITLAB_PROJECT_ID`
-- `COPY_DOWNLOADS_GITLAB_TRIGGER_TOKEN`
-- optional `GITLAB_API_URL`
