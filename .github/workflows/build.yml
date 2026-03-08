@@ -160,18 +160,13 @@ jobs:
           rustup target add x86_64-apple-ios
           rustup target add aarch64-apple-ios-sim
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build iOS (No Code Signing)
         run: |
@@ -195,7 +190,7 @@ jobs:
             bash scripts/build-ios.sh || true
           fi
 
-          flutter build ios --release --no-codesign --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build ios --release --no-codesign
 
       - name: Create unsigned IPA
         run: |
@@ -256,23 +251,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build iOS (No Code Signing)
         run: |
           flutter pub get
-          flutter build ios --release --no-codesign --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build ios --release --no-codesign
 
       - name: Create unsigned IPA
         run: |
@@ -333,24 +323,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build iOS (No Code Signing)
         run: |
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-          flutter build ios --release --no-codesign --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build ios --release --no-codesign
 
       - name: Create unsigned IPA
         run: |
@@ -411,18 +396,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build iOS (No Code Signing)
         run: |
@@ -467,7 +447,7 @@ jobs:
           ) &
           ENFORCER_PID=$!
           set +e
-          flutter build ios --release --no-codesign --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build ios --release --no-codesign
           BUILD_EXIT=$?
           set -e
           kill "$ENFORCER_PID" >/dev/null 2>&1 || true
@@ -533,25 +513,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build iOS (No Code Signing)
         run: |
           flutter pub get
           flutter gen-l10n
           dart run build_runner build --delete-conflicting-outputs
-          flutter build ios --release --no-codesign --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build ios --release --no-codesign
 
       - name: Create unsigned IPA
         run: |
@@ -624,18 +599,13 @@ jobs:
             done
           fi
 
-      - name: Compute build metadata
+      - name: Get version and date
         id: version
         run: |
-          $buildName = (Get-Date).ToUniversalTime().ToString('yyyy.M.d')
-          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-          $buildNumber = "${{ github.run_number }}"
-          $releaseTag = "build-$buildNumber"
-          echo "version=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_name=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_date=$buildDate" >> $env:GITHUB_OUTPUT
-          echo "build_number=$buildNumber" >> $env:GITHUB_OUTPUT
-          echo "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
 
       - uses: subosito/flutter-action@v2
         with:
@@ -757,18 +727,13 @@ jobs:
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.docan_commit_hash }}
 
-      - name: Compute build metadata
+      - name: Get version and date
         id: version
         run: |
-          $buildName = (Get-Date).ToUniversalTime().ToString('yyyy.M.d')
-          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-          $buildNumber = "${{ github.run_number }}"
-          $releaseTag = "build-$buildNumber"
-          echo "version=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_name=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_date=$buildDate" >> $env:GITHUB_OUTPUT
-          echo "build_number=$buildNumber" >> $env:GITHUB_OUTPUT
-          echo "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
 
       - uses: subosito/flutter-action@v2
         with:
@@ -872,18 +837,13 @@ jobs:
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
 
-      - name: Compute build metadata
+      - name: Get version and date
         id: version
         run: |
-          $buildName = (Get-Date).ToUniversalTime().ToString('yyyy.M.d')
-          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-          $buildNumber = "${{ github.run_number }}"
-          $releaseTag = "build-$buildNumber"
-          echo "version=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_name=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_date=$buildDate" >> $env:GITHUB_OUTPUT
-          echo "build_number=$buildNumber" >> $env:GITHUB_OUTPUT
-          echo "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
 
       - uses: subosito/flutter-action@v2
         with:
@@ -988,18 +948,13 @@ jobs:
         if: ${{ github.event.inputs.klit_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.klit_commit_hash }}
 
-      - name: Compute build metadata
+      - name: Get version and date
         id: version
         run: |
-          $buildName = (Get-Date).ToUniversalTime().ToString('yyyy.M.d')
-          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-          $buildNumber = "${{ github.run_number }}"
-          $releaseTag = "build-$buildNumber"
-          echo "version=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_name=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_date=$buildDate" >> $env:GITHUB_OUTPUT
-          echo "build_number=$buildNumber" >> $env:GITHUB_OUTPUT
-          echo "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1103,18 +1058,13 @@ jobs:
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
 
-      - name: Compute build metadata
+      - name: Get version and date
         id: version
         run: |
-          $buildName = (Get-Date).ToUniversalTime().ToString('yyyy.M.d')
-          $buildDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-          $buildNumber = "${{ github.run_number }}"
-          $releaseTag = "build-$buildNumber"
-          echo "version=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_name=$buildName" >> $env:GITHUB_OUTPUT
-          echo "build_date=$buildDate" >> $env:GITHUB_OUTPUT
-          echo "build_number=$buildNumber" >> $env:GITHUB_OUTPUT
-          echo "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version: ', '' -replace '\+.*', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1240,24 +1190,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build macOS (No Code Signing)
         run: |
           flutter config --enable-macos-desktop
           flutter pub get
-          flutter build macos --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
         env:
           # Disable code signing
           CODE_SIGNING_ALLOWED: "NO"
@@ -1328,24 +1273,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build macOS (No Code Signing)
         run: |
           flutter config --enable-macos-desktop
           flutter pub get
-          flutter build macos --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
         env:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
@@ -1407,25 +1347,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build macOS (No Code Signing)
         run: |
           flutter config --enable-macos-desktop
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-          flutter build macos --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
         env:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
@@ -1487,18 +1422,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Set macOS deployment target for gal plugin (requires 11.0+)
         run: |
@@ -1510,7 +1440,7 @@ jobs:
         run: |
           flutter config --enable-macos-desktop
           flutter pub get
-          flutter build macos --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
         env:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
@@ -1572,18 +1502,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build macOS (No Code Signing)
         run: |
@@ -1591,7 +1516,7 @@ jobs:
           flutter pub get
           flutter gen-l10n
           dart run build_runner build --delete-conflicting-outputs
-          flutter build macos --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build macos --release --build-name=${{ steps.version.outputs.version }}
         env:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
@@ -1728,18 +1653,15 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
           echo "✅ Android keystore validation passed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -1862,18 +1784,15 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
           echo "✅ Android keystore validation passed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -2001,18 +1920,15 @@ jobs:
             echo "Keystore validation failed, using debug signing"
           fi
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -2188,18 +2104,15 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
           echo "✅ Android keystore validation passed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -2330,18 +2243,15 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
           echo "✅ Android keystore validation passed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -2465,18 +2375,15 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" >/dev/null
           echo "✅ Android keystore validation passed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_NUMBER=$(date +%s | cut -c4-10)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: |
@@ -2575,24 +2482,19 @@ jobs:
           # Verify appimagetool works
           appimagetool --version || echo "appimagetool installed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Linux
         run: |
           flutter config --enable-linux-desktop
           flutter pub get
-          flutter build linux --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -2709,24 +2611,19 @@ jobs:
           # Verify appimagetool works
           appimagetool --version || echo "appimagetool installed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Linux
         run: |
           flutter config --enable-linux-desktop
           flutter pub get
-          flutter build linux --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -2843,25 +2740,20 @@ jobs:
           # Verify appimagetool works
           appimagetool --version || echo "appimagetool installed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Linux
         run: |
           flutter config --enable-linux-desktop
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-          flutter build linux --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -2978,24 +2870,19 @@ jobs:
           # Verify appimagetool works
           appimagetool --version || echo "appimagetool installed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Linux
         run: |
           flutter config --enable-linux-desktop
           flutter pub get
-          flutter build linux --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -3112,18 +2999,13 @@ jobs:
           # Verify appimagetool works
           appimagetool --version || echo "appimagetool installed"
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Linux
         run: |
@@ -3131,7 +3013,7 @@ jobs:
           flutter pub get
           flutter gen-l10n
           dart run build_runner build --delete-conflicting-outputs
-          flutter build linux --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -3233,23 +3115,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Web
         run: |
           flutter pub get
-          flutter build web --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -3304,24 +3181,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Web
         run: |
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-          flutter build web --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -3376,25 +3248,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build Web
         run: |
           flutter pub get
           flutter gen-l10n
           dart run build_runner build --delete-conflicting-outputs
-          flutter build web --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
+          flutter build web --release --build-name=${{ steps.version.outputs.version }}
 
       - name: Create ZIP
         run: |
@@ -3448,18 +3315,13 @@ jobs:
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
 
-      - name: Compute build metadata
+      - name: Get version from pubspec
         id: version
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          BUILD_NAME=$(date -u +%Y.%-m.%-d)
-          BUILD_DATE=$(date -u +%Y-%m-%d)
-          RELEASE_TAG="build-${BUILD_NUMBER}"
-          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -3477,9 +3339,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/finar
           tags: |
-            type=raw,value=${{ steps.version.outputs.release_tag }}
+            type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest
-            type=raw,value=${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_number }}
+            type=raw,value=${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -3545,14 +3407,6 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && !cancelled()
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Compute build metadata
-        id: meta
-        run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}" ./scripts/release-metadata.sh --github-output
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -3588,26 +3442,103 @@ jobs:
       - name: Generate build manifest JSON
         id: manifest
         run: |
-          resolve_commit() {
-            local input_sha="$1"
-            local repo_url="$2"
-            if [ -n "$input_sha" ]; then
-              echo "$input_sha"
-              return 0
-            fi
-            git ls-remote "$repo_url" HEAD | awk '{print $1}'
+          BUILD_DATE=$(date +%Y-%m-%d)
+          BUILD_TIME=$(date +%H:%M:%S)
+          BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Start JSON
+          cat > build-manifest.json << 'JSONEOF'
+          {
+            "build_info": {
+              "run_number": ${{ github.run_number }},
+              "run_id": "${{ github.run_id }}",
+              "build_date": "BUILD_DATE_PLACEHOLDER",
+              "build_time": "BUILD_TIME_PLACEHOLDER",
+              "timestamp": "BUILD_TIMESTAMP_PLACEHOLDER",
+              "triggered_by": "${{ github.actor }}",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}"
+            },
+            "requested_builds": {
+              "doudou": ${{ github.event.inputs.build_doudou }},
+              "docan": ${{ github.event.inputs.build_docan }},
+              "finar": ${{ github.event.inputs.build_finar }},
+              "klit": ${{ github.event.inputs.build_klit }},
+              "repstore": ${{ github.event.inputs.build_repstore }},
+              "opentorrent": ${{ github.event.inputs.build_opentorrent }}
+            },
+            "artifacts": []
           }
+          JSONEOF
 
-          doudou_commit=$(resolve_commit "${{ github.event.inputs.doudou_commit_hash }}" "https://gitlab.com/Openlyst/doudou.git")
-          docan_commit=$(resolve_commit "${{ github.event.inputs.docan_commit_hash }}" "https://gitlab.com/Openlyst/docan.git")
-          finar_commit=$(resolve_commit "${{ github.event.inputs.finar_commit_hash }}" "https://gitlab.com/Openlyst/finar.git")
-          klit_commit=$(resolve_commit "${{ github.event.inputs.klit_commit_hash }}" "https://gitlab.com/Openlyst/klit.git")
-          repstore_commit=$(resolve_commit "${{ github.event.inputs.repstore_commit_hash }}" "https://gitlab.com/Openlyst/repstore.git")
-          opentorrent_commit=$(resolve_commit "${{ github.event.inputs.opentorrent_commit_hash }}" "https://gitlab.com/Openlyst/opentorrent.git")
+          # Replace placeholders
+          sed -i "s/BUILD_DATE_PLACEHOLDER/$BUILD_DATE/g" build-manifest.json
+          sed -i "s/BUILD_TIME_PLACEHOLDER/$BUILD_TIME/g" build-manifest.json
+          sed -i "s/BUILD_TIMESTAMP_PLACEHOLDER/$BUILD_TIMESTAMP/g" build-manifest.json
 
-          app_commits_json=$(jq -cn             --arg doudou "$doudou_commit"             --arg docan "$docan_commit"             --arg finar "$finar_commit"             --arg klit "$klit_commit"             --arg repstore "$repstore_commit"             --arg opentorrent "$opentorrent_commit"             '{doudou:$doudou,docan:$docan,finar:$finar,klit:$klit,repstore:$repstore,opentorrent:$opentorrent}')
+          # Build artifacts array
+          ARTIFACTS_JSON="["
+          FIRST=true
 
-          python scripts/generate-build-manifest.py             --artifact-dir .             --output build-manifest.json             --release-tag "${{ steps.meta.outputs.release_tag }}"             --build-name "${{ steps.meta.outputs.build_name }}"             --build-number "${{ steps.meta.outputs.build_number }}"             --build-date "${{ steps.meta.outputs.build_date }}"             --generated-at "${{ steps.meta.outputs.generated_at }}"             --source-repo "https://github.com/${{ github.repository }}"             --source-commit-sha "${{ github.sha }}"             --source-commit-url "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"             --app-commits-json "$app_commits_json"
+          for file in $(find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" \) | sort); do
+            filename=$(basename "$file")
+            filesize=$(stat -c%s "$file")
+            filesize_human=$(du -h "$file" | cut -f1)
+            sha256=$(sha256sum "$file" | cut -d' ' -f1)
+
+            # Determine platform and project from filename
+            platform="unknown"
+            project="unknown"
+            format="${filename##*.}"
+
+            case "$filename" in
+              *-windows-*) platform="windows" ;;
+              *-macos-*) platform="macos" ;;
+              *-ios-*) platform="ios" ;;
+              *-linux-*) platform="linux" ;;
+              *-web*) platform="web" ;;
+              *.apk|*.aab) platform="android" ;;
+            esac
+
+            case "$filename" in
+              doudou-*) project="doudou" ;;
+              docan-*) project="docan" ;;
+              finar-*) project="finar" ;;
+              klit-*) project="klit" ;;
+              repstore-*) project="repstore" ;;
+              opentorrent-*) project="opentorrent" ;;
+            esac
+
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              ARTIFACTS_JSON="$ARTIFACTS_JSON,"
+            fi
+
+            ARTIFACTS_JSON="$ARTIFACTS_JSON
+              {
+                \"filename\": \"$filename\",
+                \"project\": \"$project\",
+                \"platform\": \"$platform\",
+                \"format\": \"$format\",
+                \"size_bytes\": $filesize,
+                \"size_human\": \"$filesize_human\",
+                \"sha256\": \"$sha256\"
+              }"
+          done
+
+          ARTIFACTS_JSON="$ARTIFACTS_JSON
+            ]"
+
+          # Insert artifacts into JSON using jq if available, otherwise use sed
+          if command -v jq &> /dev/null; then
+            jq --argjson artifacts "$ARTIFACTS_JSON" '.artifacts = $artifacts' build-manifest.json > build-manifest-temp.json
+            mv build-manifest-temp.json build-manifest.json
+          else
+            # Fallback: replace empty artifacts array
+            sed -i "s/\"artifacts\": \[\]/\"artifacts\": $ARTIFACTS_JSON/g" build-manifest.json
+          fi
 
           echo "=== Build Manifest ==="
           cat build-manifest.json
@@ -3630,15 +3561,7 @@ jobs:
           TOTAL_COUNT=$((APK_COUNT + AAB_COUNT + IPA_COUNT + ZIP_COUNT + DEB_COUNT + RPM_COUNT + APPIMAGE_COUNT + EXE_COUNT))
 
           # List all artifacts with sizes
-          echo "## Release Metadata" > release_notes.md
-          echo "" >> release_notes.md
-          echo "- Release tag: ${{ steps.meta.outputs.release_tag }}" >> release_notes.md
-          echo "- Build name: ${{ steps.meta.outputs.build_name }}" >> release_notes.md
-          echo "- Build number: ${{ steps.meta.outputs.build_number }}" >> release_notes.md
-          echo "- Source commit: ${{ github.sha }}" >> release_notes.md
-          echo "- Source commit URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## 📦 Build Artifacts" >> release_notes.md
+          echo "## 📦 Build Artifacts" > release_notes.md
           echo "" >> release_notes.md
           echo "| File | Size |" >> release_notes.md
           echo "|------|------|" >> release_notes.md
@@ -3854,11 +3777,15 @@ jobs:
           echo "*Built with Flutter stable channel on GitHub Actions*" >> release_notes.md
           echo "*Run #${{ github.run_number }} - Triggered by @${{ github.actor }}*" >> release_notes.md
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.meta.outputs.release_tag }}
-          name: "Build ${{ steps.meta.outputs.build_name }} (#${{ steps.meta.outputs.build_number }})"
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }} - ${{ steps.date.outputs.date }}"
           body_path: release_notes.md
           fail_on_unmatched_files: false
           files: |
