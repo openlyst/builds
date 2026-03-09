@@ -10,8 +10,7 @@
     "doudou",
     "docan",
     "finar",
-    "klit",
-    "opentorrent"
+    "klit"
   ],
   "apps": [
     {
@@ -25,6 +24,14 @@
       "category": "other",
       "versions": [
         {
+          "version": "16.0.0",
+          "buildVersion": "1",
+          "date": "2026-03-09",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-68/doudou-16.0.0-2026-03-09-ios-unsigned.ipa",
+          "size": 14149902,
+          "localizedDescription": "# 16.0.0\n\n- Brand new app\n- Everything has been rewritten to just work. We are done with bugs and unimplamented features"
+        },
+        {
           "version": "15.0.0",
           "buildVersion": "1",
           "date": "2026-02-27",
@@ -37,7 +44,7 @@
           "buildVersion": "1",
           "date": "2026-02-16",
           "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-31/doudou-14.0.0-2026-02-16-ios-unsigned.ipa",
-          "size": 55124,
+          "size": 9,
           "localizedDescription": "# 14.0.0\n\n- New UI for both desktop and mobile.\n- Don't show desktop sidebar when on small screens.\n- Remove logging.\n- Expand the about Doudou section.\n- Port the old navbar.\n- Settings scales.\n- New app layouts.\n- Port the now playing screen.\n- Spec bump to 14.0.0.\n- Mobile track now goes left from right.\n- Lyrics icon is now a microphone; only shown when lyrics are available.\n- Fixed animation when reversing a song."
         },
         {
@@ -57,12 +64,6 @@
           "localizedDescription": "# 12.0.1\n\n- Updated donate URL | https://openlyst.ink/support\n- Version bump to 12.0.1\n- Haptic feedback for favorite button"
         }
       ],
-      "appPermissions": {
-        "entitlements": [],
-        "privacy": {
-          "NSLocalNetworkUsageDescription": "Doudou needs to access local network to connect to your Jellyfin server."
-        }
-      },
       "screenshots": [
         "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
         "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
@@ -141,6 +142,22 @@
       "category": "other",
       "versions": [
         {
+          "version": "9.0.0",
+          "buildVersion": "1",
+          "date": "2026-03-09",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-68/klit-9.0.0-2026-03-09-ios-unsigned.ipa",
+          "size": 21385872,
+          "localizedDescription": "# 9.0.0\n\n- Brand new codebase"
+        },
+        {
+          "version": "8.1.0",
+          "buildVersion": "1",
+          "date": "2026-03-01",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-23/klit-8.1.0-2026-03-01-ios-unsigned.ipa",
+          "size": 15356304,
+          "localizedDescription": "# 8.1.0\n\n- Remove Server Configuration from Settings: the host/API server is no longer configurable in Settings; to use a different host (e.g. e621 vs e926), add a new account for that host and switch accounts\n- Keep tab pages alive with IndexedStack so switching tabs or resizing desktop/mobile does not dispose pages; images and scroll position are preserved\n- Search page: when opened with a new query (e.g. from tag tap), update search field and run search via didUpdateWidget\n- Optimistic favorite and upvote in post detail: UI and confetti update immediately; API runs in background and state reverts on failure\n- Posts provider: use separate loading-more flags for latest/hot/popular so existing lists show without a full loading state when loading more\n- Profile: in-memory cache so returning to a previously loaded profile shows instantly, then refreshes in background\n- Post card: stable cacheKey for CachedNetworkImage so cache lookup is consistent across rebuilds\n- Feeds (edit): tag suggestions in And/Or/Exclude fields via shared TagSuggestionField widget; reuses search-tag logic (debounce, prefix, insert at cursor)\n- Post detail: catch precache image failures (invalid image data) so they do not throw or spam the console\n- Post detail: full OLED theme support - scaffold, nav bar, desktop top bar, info panel, controller hints and comments sheet use pure black / OLED colors when OLED mode is on\n- Settings > Video: add \"Autoplay GIFs\" (default on) to animate GIFs in home, search, and other grids; when off, post cards show static preview for GIFs\n- GIF autoplay: only animate GIFs when the post card is in view (visibility detector); off-screen cards show static preview to reduce lag. While the GIF loads or on error, show the static preview so there is no black or grey flash\n- Feeds: when creating or editing a feed you can set rating (All / Safe / Q / E) and sort (Newest, Oldest, Score, Favorites); opening a feed applies these filters like on the search page\n- Feeds: optional \"Exclude my favorites\" (default off); when on, the feed excludes posts you have favorited\n- Feeds: subfeeds - attach optional subfeeds to a feed (name + extra include/exclude tags); when viewing the feed, tabs show Main and each subfeed; only one subfeed active at a time; subfeed adds its tags to the main query\n- Feeds tab: subfeeds listed under each feed card (indented, smaller) so you can open a feed with a specific subfeed active directly from the list\n- Feeds and Search stay inside the shell: opening a feed switches to the Search tab with filters instead of pushing a full-screen route; creating/editing a feed shows the form in the Feeds tab so the nav bar and sidebar remain visible\n- Search page: single top bar with search field and filter/search buttons instead of separate title bar and toolbar\n- Search page (desktop): hide history sidebar when history is off or empty; results use full width\n- OLED mode: glass header variant (search/feed top bar) uses solid black when OLED is on; search toolbar text field uses OLED secondary background\n- Settings: full OLED theming - account/cards, sidebar, content header border, category list, nav order and proxy dialogs, update check dialogs use black/secondary OLED colors when OLED mode is on"
+        },
+        {
           "version": "8.0.1",
           "buildVersion": "1",
           "date": "2026-02-27",
@@ -168,48 +185,14 @@
       "appPermissions": {
         "entitlements": [],
         "privacy": {
-          "NSCameraUsageDescription": "Klit can take a photo when you mark a post as \"I finished\" (optional feature in Settings).",
-          "NSPhotoLibraryAddUsageDescription": "Klit saves images and videos to your photo library when you tap Download.",
-          "NSPhotoLibraryUsageDescription": "Klit saves images and videos to your photo library when you tap Download."
+          "NSFaceIDUsageDescription": "App can be locked with local authentication",
+          "NSPhotoLibraryAddUsageDescription": "Downloaded images will be saved in the gallery"
         }
       },
       "screenshots": [
         "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/home.png?ref_type=heads",
         "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/popular.png?ref_type=heads",
         "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/post.png?ref_type=heads"
-      ]
-    },
-    {
-      "name": "Opentorrent",
-      "bundleIdentifier": "opentorrent",
-      "developerName": "OpenLyst Developer",
-      "subtitle": "qBittorrent client",
-      "localizedDescription": "Opentorrent is a cross-platform qBittorrent client for iOS, macOS, Windows, Linux, Android, and web.",
-      "iconURL": "https://gitlab.com/Openlyst/opentorrent/-/raw/main/assets/icons/app_icon.png?ref_type=heads",
-      "tintColor": "#dc2626",
-      "category": "other",
-      "versions": [
-        {
-          "version": "2.0.0",
-          "buildVersion": "1",
-          "date": "2026-02-17",
-          "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-32/opentorrent-2.0.0-2026-02-17-ios-unsigned.ipa",
-          "size": 9,
-          "localizedDescription": "# 2.0.0\n\n- fixed sub-buttons on ios theme\n- fixed navbar white coloured on ios\n- better iso support\n- new ios theme\n- System option for design system\n- Change your login from the login screen\n- start on v2\n- Torznab search category label: show \"Adult\" instead of placeholder \"XXX\"\n- Add torrent page: scrollable layout so options and button do not overflow on small screens\n- Torrent detail: localized tab labels and loading/error/not-found messages\n- Login page: localized connection messages and default server name\n- Settings and server preferences: localized update-check messages and preferences saved / not connected\n- Torrent list: localized Select All tooltip, selected count, and delete confirmation\n- Adaptive navigation: use CupertinoPageRoute when design system is Cupertino (torrent list, settings, server selection)\n- Torrent list: Cupertino-style scaffold and nav bar when design system is Cupertino\n- Add torrent: Cupertino scaffold with segmented control when design system is Cupertino\n- Torrent detail: Cupertino scaffold with segmented control for tabs when design system is Cupertino\n- Desktop: minimize/close to system tray using window_manager and tray_manager\n- Desktop: global download/upload speed shown in sidebar (Material and Cupertino layouts)\n- Torrent list: fix \"No Material widget found\" for FilterChip when using Cupertino design (wrap filter bar in Material)\n- Fix Formatters usage: use formatDownloadSpeed/formatUploadSpeed instead of formatSpeedDown/formatSpeedUp"
-        },
-        {
-          "version": "1.0.0",
-          "buildVersion": "1",
-          "date": "2026-01-14",
-          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-4/opentorrent-1.0.0-2026-02-08-ios-unsigned.ipa",
-          "size": 27,
-          "localizedDescription": "Initial release of Opentorrent, a cross-platform qBittorrent client that brings seamless torrenting to iOS, macOS, Windows, Linux, Android, and the Web."
-        }
-      ],
-      "screenshots": [
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/opentorrent/photo_2026-01-14_09-18-03.jpg?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/opentorrent/photo_2026-01-14_09-17-59.jpg?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/opentorrent/photo_2026-01-14_09-17-33.jpg?ref_type=heads"
       ]
     }
   ],
