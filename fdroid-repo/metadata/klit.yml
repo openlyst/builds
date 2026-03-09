@@ -18,6 +18,20 @@ Repo:
 
 Builds:
 
+  - versionName: '9.0.0'
+    versionCode: 1
+    commit: v9.0.0
+    subdir: app
+    gradle:
+      - yes
+
+  - versionName: '8.1.0'
+    versionCode: 1
+    commit: v8.1.0
+    subdir: app
+    gradle:
+      - yes
+
   - versionName: '8.0.1'
     versionCode: 1
     commit: v8.0.1
@@ -39,5 +53,5 @@ Builds:
     gradle:
       - yes
 
-CurrentVersion: '8.0.1'
+CurrentVersion: '9.0.0'
 CurrentVersionCode: 1

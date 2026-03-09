@@ -1,9 +1,9 @@
 class Klit < Formula
   desc "E926 API client"
   homepage "https://openlyst.ink"
-  url "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-21/klit-8.0.1-2026-02-27-macos-unsigned.zip"
-  version "8.0.1"
-  sha256 "316d7e490fc3c61fa32436e227cc61ff84b3ea6efa9d09673639088d0a9f4c81"
+  url "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-68/klit-9.0.0-2026-03-09-macos-unsigned.zip"
+  version "9.0.0"
+  sha256 "459b6f0a389f68594dfe3ea1cb988f3ba9322f5c66c91fcdf458a1ea5ec7095f"
 
   def install
     # Generic installation
