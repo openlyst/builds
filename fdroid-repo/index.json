@@ -4,7 +4,7 @@
     "description": "Free and open source Android applications from OpenLyst",
     "icon": "icon.png",
     "address": "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo",
-    "timestamp": 1773037355191,
+    "timestamp": 1773358855135,
     "version": 21
   },
   "requests": {
@@ -23,8 +23,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773037355191,
-      "lastUpdated": 1773037355191
+      "added": 1773358855135,
+      "lastUpdated": 1773358855135
     },
     {
       "packageName": "docan",
@@ -37,8 +37,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773037355191,
-      "lastUpdated": 1773037355191
+      "added": 1773358855135,
+      "lastUpdated": 1773358855135
     },
     {
       "packageName": "finar",
@@ -51,8 +51,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773037355191,
-      "lastUpdated": 1773037355191
+      "added": 1773358855135,
+      "lastUpdated": 1773358855135
     },
     {
       "packageName": "klit",
@@ -65,8 +65,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773037355191,
-      "lastUpdated": 1773037355191
+      "added": 1773358855135,
+      "lastUpdated": 1773358855135
     },
     {
       "packageName": "repstore",
@@ -79,14 +79,26 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773037355191,
-      "lastUpdated": 1773037355191
+      "added": 1773358855135,
+      "lastUpdated": 1773358855135
     }
   ],
   "packages": {
     "doudou": [
       {
-        "added": 1773037351871,
+        "added": 1773358850683,
+        "apkName": "doudou-16.1.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "doudou",
+        "size": 83703378,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "16.1.0"
+      },
+      {
+        "added": 1773358850915,
         "apkName": "doudou-16.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -98,7 +110,7 @@
         "versionName": "16.0.0"
       },
       {
-        "added": 1773037352143,
+        "added": 1773358851174,
         "apkName": "doudou-15.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -110,45 +122,33 @@
         "versionName": "15.0.0"
       },
       {
-        "added": 1773037352399,
+        "added": 1773358851559,
         "apkName": "doudou-14.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "doudou",
-        "size": 9,
+        "size": 87948822,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "14.0.0"
       },
       {
-        "added": 1773037352456,
+        "added": 1773358851901,
         "apkName": "doudou-13.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "doudou",
-        "size": 9,
+        "size": 86726178,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "13.0.0"
-      },
-      {
-        "added": 1773037352516,
-        "apkName": "doudou-12.0.1.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "doudou",
-        "size": 27,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "12.0.1"
       }
     ],
     "docan": [
       {
-        "added": 1773037352678,
+        "added": 1773358852207,
         "apkName": "docan-3.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -162,7 +162,7 @@
     ],
     "finar": [
       {
-        "added": 1773037352812,
+        "added": 1773358852370,
         "apkName": "finar-3.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -174,19 +174,19 @@
         "versionName": "3.0.0"
       },
       {
-        "added": 1773037353087,
+        "added": 1773358852634,
         "apkName": "finar-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
         "packageName": "finar",
-        "size": 9,
+        "size": 100213080,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "2.0.0"
       },
       {
-        "added": 1773037353143,
+        "added": 1773358852910,
         "apkName": "finar-1.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -200,7 +200,7 @@
     ],
     "klit": [
       {
-        "added": 1773037353335,
+        "added": 1773358853077,
         "apkName": "klit-9.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -212,7 +212,7 @@
         "versionName": "9.0.0"
       },
       {
-        "added": 1773037353575,
+        "added": 1773358853375,
         "apkName": "klit-8.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -224,7 +224,7 @@
         "versionName": "8.1.0"
       },
       {
-        "added": 1773037353878,
+        "added": 1773358853694,
         "apkName": "klit-8.0.1.apk",
         "hash": "",
         "hashType": "sha256",
@@ -236,7 +236,7 @@
         "versionName": "8.0.1"
       },
       {
-        "added": 1773037354109,
+        "added": 1773358853987,
         "apkName": "klit-8.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -248,7 +248,7 @@
         "versionName": "8.0.0"
       },
       {
-        "added": 1773037354344,
+        "added": 1773358854237,
         "apkName": "klit-7.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -262,7 +262,7 @@
     ],
     "repstore": [
       {
-        "added": 1773037354504,
+        "added": 1773358854404,
         "apkName": "repstore-4.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -274,7 +274,7 @@
         "versionName": "4.0.0"
       },
       {
-        "added": 1773037354747,
+        "added": 1773358854630,
         "apkName": "repstore-3.2.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -286,7 +286,7 @@
         "versionName": "3.2.0"
       },
       {
-        "added": 1773037354957,
+        "added": 1773358854882,
         "apkName": "repstore-3.1.0.apk",
         "hash": "",
         "hashType": "sha256",
