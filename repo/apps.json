@@ -24,6 +24,14 @@
       "category": "other",
       "versions": [
         {
+          "version": "16.1.0",
+          "buildVersion": "1",
+          "date": "2026-03-11",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-71/doudou-16.1.0-2026-03-11-ios-unsigned.ipa",
+          "size": 14197696,
+          "localizedDescription": "# 16.1.0\n- en_AU patches\n- Fix album art animations\n- Fix animations not being smooth\n- Removed GetX"
+        },
+        {
           "version": "16.0.0",
           "buildVersion": "1",
           "date": "2026-03-09",
@@ -44,7 +52,7 @@
           "buildVersion": "1",
           "date": "2026-02-16",
           "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-31/doudou-14.0.0-2026-02-16-ios-unsigned.ipa",
-          "size": 9,
+          "size": 14076776,
           "localizedDescription": "# 14.0.0\n\n- New UI for both desktop and mobile.\n- Don't show desktop sidebar when on small screens.\n- Remove logging.\n- Expand the about Doudou section.\n- Port the old navbar.\n- Settings scales.\n- New app layouts.\n- Port the now playing screen.\n- Spec bump to 14.0.0.\n- Mobile track now goes left from right.\n- Lyrics icon is now a microphone; only shown when lyrics are available.\n- Fixed animation when reversing a song."
         },
         {
@@ -52,7 +60,7 @@
           "buildVersion": "1",
           "date": "2026-02-15",
           "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-22/doudou-13.0.0-2026-02-15-ios-unsigned.ipa",
-          "size": 9,
+          "size": 13899549,
           "localizedDescription": "# 13.0.0\n\n- Version bump to 13.0.0."
         },
         {
@@ -118,7 +126,7 @@
           "buildVersion": "1",
           "date": "2026-02-13",
           "downloadURL": "https://github.com/justacalico/Openlyst-more-builds/releases/download/build-13/finar-1.1.0-2026-02-13-ios-unsigned.ipa",
-          "size": 9,
+          "size": 15669454,
           "localizedDescription": "# 2.0.0\n\n- Version bump to 2.0.0.\n- Header now shows TV show name and episode.\n- Desktop search bar now spans the full width.\n- Removed the extra season picker for TV shows.\n- Opening an episode now takes you to the show page with that season expanded.\n- 'See All' buttons now work.\n- On-screen controls appear when you move the mouse.\n- On-screen controls auto-hide after a short delay.\n- Fixed card clipping.\n- Fixed desktop detail clipping/overflow by letting action controls wrap on smaller widths.\n- Fixed desktop detail action bar overflow on narrow widths by using a single-row horizontal action strip.\n- Resizing between desktop and mobile layouts now keeps page context (detail/player/library/downloads/settings).\n- Updated the desktop Details panel to use liquid glass styling.\n- Desktop sidebar profile card now hides the server URL and shows a user avatar (with initials fallback).\n- Focus/hover outlines on media cards now adapt to artwork colors instead of a fixed accent.\n- Updated the desktop Trailer button to match the liquid-glass style used by other controls.\n- Trailer playback flow now works end-to-end: local trailers play in-app, and remote trailers open through URL launcher with URL normalization."
         },
         {
