@@ -2480,7 +2480,7 @@ jobs:
         run: bun install
 
       - name: Build Windows Desktop
-        run: bun run dist:desktop:win
+        run: bunx tsx scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64
 
       - name: Record duration and status
         id: duration
@@ -2541,10 +2541,10 @@ jobs:
         run: bun install
 
       - name: Build macOS DMG (x64)
-        run: bun run dist:desktop:dmg:x64
+        run: bunx tsx scripts/build-desktop-artifact.ts --platform mac --target dmg --arch x64
 
       - name: Build macOS DMG (ARM64)
-        run: bun run dist:desktop:dmg:arm64
+        run: bunx tsx scripts/build-desktop-artifact.ts --platform mac --target dmg --arch arm64
 
       - name: Record duration and status
         id: duration
@@ -2607,23 +2607,34 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libxss1 libgconf-2-4 libxtst6 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libgtk-3-0 libgdk-pixbuf2.0-0 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libnss3 libcups2
+
       - name: Install dependencies
         run: bun install
 
       - name: Build Linux Desktop
-        run: bun run dist:desktop:linux
+        run: bunx tsx scripts/build-desktop-artifact.ts --platform linux --target AppImage,deb,rpm --arch x64
 
       - name: Record duration and status
         id: duration
         if: always()
         run: |
           start_time="${{ steps.start.outputs.start_time }}"
-          start_seconds=$(date -d "${start_time%+*}" +%s 2>/dev/null || echo 0)
-          end_seconds=$(date +%s)
-          if [ "$start_seconds" != "0" ]; then
-            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          # Try different date parsing methods for compatibility
+          if command -v python3 >/dev/null 2>&1; then
+            duration=$(python3 -c "from datetime import datetime; import sys; start=datetime.fromisoformat('${start_time%+*}'); end=datetime.now(); print(f'{(end-start).total_seconds()/60:.1f}' if start else 'N/A')")
           else
-            duration="N/A"
+            # Fallback to simple calculation
+            start_seconds=$(date -d "${start_time%+*}" +%s 2>/dev/null || echo 0)
+            end_seconds=$(date +%s)
+            if [ "$start_seconds" != "0" ]; then
+              duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc 2>/dev/null || echo "N/A")
+            else
+              duration="N/A"
+            fi
           fi
           echo "duration=$duration" >> $GITHUB_OUTPUT
 
