@@ -98,6 +98,22 @@ on:
         required: false
         type: string
         default: ''
+      # Lystcode
+      build_lystcode:
+        description: 'Build Lystcode'
+        required: false
+        type: boolean
+        default: false
+      lystcode_platforms:
+        description: 'Lystcode platforms (comma-separated: windows,linux,macos)'
+        required: false
+        type: string
+        default: 'windows,linux,macos'
+      lystcode_commit_hash:
+        description: 'Lystcode commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -2420,6 +2436,210 @@ jobs:
           path: |
             opentorrent-*.apk
             opentorrent-*.aab
+
+  # ============================================================================
+  # LYSTCODE DESKTOP BUILDS (Electron)
+  # ============================================================================
+
+  # LYSTCODE - WINDOWS
+  build-windows-lystcode:
+    if: ${{ github.event.inputs.build_lystcode == 'true' && contains(github.event.inputs.lystcode_platforms, 'windows') }}
+    runs-on: windows-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(Get-Date -Format 'o')" >> $env:GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/Lystcode.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+
+      - name: Get version and date
+        id: version
+        run: |
+          $version = (Select-String -Path "apps/desktop/package.json" -Pattern '"version":').Line -replace '"version": ', '' -replace '"', '' -replace ',', ''
+          $date = Get-Date -Format 'yyyy-MM-dd'
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "build_date=$date" >> $env:GITHUB_OUTPUT
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Windows Desktop
+        run: bun run dist:desktop:win
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          $start = [DateTime]::Parse("${{ steps.start.outputs.start_time }}")
+          $duration = [Math]::Round(((Get-Date) - $start).TotalMinutes, 1)
+          echo "duration=$duration" >> $env:GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lystcode-windows
+          path: |
+            release/Lystcode-*.exe
+
+  # LYSTCODE - MACOS
+  build-macos-lystcode:
+    if: ${{ github.event.inputs.build_lystcode == 'true' && contains(github.event.inputs.lystcode_platforms, 'macos') }}
+    runs-on: macos-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/Lystcode.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(grep '"version":' apps/desktop/package.json | sed 's/"version": "//g' | sed 's/"//g' | sed 's/,//g' | tr -d ' ')
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build macOS DMG (x64)
+        run: bun run dist:desktop:dmg:x64
+
+      - name: Build macOS DMG (ARM64)
+        run: bun run dist:desktop:dmg:arm64
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lystcode-macos
+          path: |
+            release/Lystcode-*.dmg
+
+  # LYSTCODE - LINUX
+  build-linux-lystcode:
+    if: ${{ github.event.inputs.build_lystcode == 'true' && contains(github.event.inputs.lystcode_platforms, 'linux') }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/Lystcode.git .
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(grep '"version":' apps/desktop/package.json | sed 's/"version": "//g' | sed 's/"//g' | sed 's/,//g' | tr -d ' ')
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Linux Desktop
+        run: bun run dist:desktop:linux
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "${start_time%+*}" +%s 2>/dev/null || echo 0)
+          end_seconds=$(date +%s)
+          if [ "$start_seconds" != "0" ]; then
+            duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          else
+            duration="N/A"
+          fi
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lystcode-linux
+          path: |
+            release/Lystcode-*.AppImage
+            release/Lystcode-*.deb
+            release/Lystcode-*.rpm
 
   # ============================================================================
   # LINUX BUILDS (ZIP, AppImage, DEB)
