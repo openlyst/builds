@@ -3659,6 +3659,9 @@ jobs:
       - build-web-finar
       - build-web-opentorrent
       - build-docker-finar
+      - build-windows-lystcode
+      - build-macos-lystcode
+      - build-linux-lystcode
     runs-on: ubuntu-latest
     if: always() && !cancelled()
     steps:
@@ -3721,7 +3724,8 @@ jobs:
               "finar": ${{ github.event.inputs.build_finar }},
               "klit": ${{ github.event.inputs.build_klit }},
               "repstore": ${{ github.event.inputs.build_repstore }},
-              "opentorrent": ${{ github.event.inputs.build_opentorrent }}
+              "opentorrent": ${{ github.event.inputs.build_opentorrent }},
+              "lystcode": ${{ github.event.inputs.build_lystcode }}
             },
             "artifacts": []
           }
@@ -3763,6 +3767,7 @@ jobs:
               klit-*) project="klit" ;;
               repstore-*) project="repstore" ;;
               opentorrent-*) project="opentorrent" ;;
+              Lystcode-*) project="lystcode" ;;
             esac
 
             if [ "$FIRST" = true ]; then
@@ -3923,6 +3928,16 @@ jobs:
             echo "" >> release_notes.md
           fi
 
+          # Lystcode
+          if [ "${{ github.event.inputs.build_lystcode }}" == "true" ]; then
+            echo "### Lystcode" >> release_notes.md
+            echo "- Version: ${{ needs.build-linux-lystcode.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-lystcode.outputs.status || 'skipped' }} ${{ needs.build-windows-lystcode.outputs.duration && format('({0} min)', needs.build-windows-lystcode.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-lystcode.outputs.status || 'skipped' }} ${{ needs.build-macos-lystcode.outputs.duration && format('({0} min)', needs.build-macos-lystcode.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-lystcode.outputs.status || 'skipped' }} ${{ needs.build-linux-lystcode.outputs.duration && format('({0} min)', needs.build-linux-lystcode.outputs.duration) || '' }}" >> release_notes.md
+            echo "" >> release_notes.md
+          fi
+
           echo "---" >> release_notes.md
           echo "" >> release_notes.md
 
@@ -3961,6 +3976,9 @@ jobs:
           if [ "${{ needs.build-web-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Web"; fi
           if [ "${{ needs.build-web-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Web"; fi
           if [ "${{ needs.build-android-repstore.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Repstore-Android"; fi
+          if [ "${{ needs.build-windows-lystcode.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Lystcode-Windows"; fi
+          if [ "${{ needs.build-macos-lystcode.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Lystcode-macOS"; fi
+          if [ "${{ needs.build-linux-lystcode.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Lystcode-Linux"; fi
 
           if [ -n "$FAILED_BUILDS" ]; then
             echo "🔴 **Failed builds:**$FAILED_BUILDS" >> release_notes.md
