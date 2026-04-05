@@ -2482,6 +2482,11 @@ jobs:
       - name: Install tsx for TypeScript execution
         run: bun add -D tsx
 
+      - name: Fix server build script to use tsx
+        run: |
+          # Temporarily modify server package.json to use tsx instead of node
+          (Get-Content "apps/server/package.json") -replace '"build": "node scripts/cli.ts build"', '"build": "tsx scripts/cli.ts build"' | Set-Content "apps/server/package.json"
+
       - name: Build Windows Desktop
         run: bunx tsx scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64
 
@@ -2545,6 +2550,11 @@ jobs:
 
       - name: Install tsx for TypeScript execution
         run: bun add -D tsx
+
+      - name: Fix server build script to use tsx
+        run: |
+          # Temporarily modify server package.json to use tsx instead of node
+          sed -i '' 's/"build": "node scripts\/cli.ts build"/"build": "tsx scripts\/cli.ts build"/' apps/server/package.json
 
       - name: Build macOS DMG (x64)
         run: bunx tsx scripts/build-desktop-artifact.ts --platform mac --target dmg --arch x64
@@ -2623,6 +2633,11 @@ jobs:
 
       - name: Install tsx for TypeScript execution
         run: bun add -D tsx
+
+      - name: Fix server build script to use tsx
+        run: |
+          # Temporarily modify server package.json to use tsx instead of node
+          sed -i 's/"build": "node scripts\/cli.ts build"/"build": "tsx scripts\/cli.ts build"/' apps/server/package.json
 
       - name: Build Linux Desktop
         run: bunx tsx scripts/build-desktop-artifact.ts --platform linux --target AppImage,deb,rpm --arch x64
