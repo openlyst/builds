@@ -2479,6 +2479,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install tsx for TypeScript execution
+        run: bun add -D tsx
+
       - name: Build Windows Desktop
         run: bunx tsx scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64
 
@@ -2539,6 +2542,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Install tsx for TypeScript execution
+        run: bun add -D tsx
 
       - name: Build macOS DMG (x64)
         run: bunx tsx scripts/build-desktop-artifact.ts --platform mac --target dmg --arch x64
@@ -2614,6 +2620,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Install tsx for TypeScript execution
+        run: bun add -D tsx
 
       - name: Build Linux Desktop
         run: bunx tsx scripts/build-desktop-artifact.ts --platform linux --target AppImage,deb,rpm --arch x64
