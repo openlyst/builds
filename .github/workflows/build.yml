@@ -3672,18 +3672,19 @@ jobs:
 
       - name: Flatten artifacts directory
         run: |
-          # Move .deb, .rpm, .AppImage, .exe and .tar.gz files from artifacts/ to root directory
+          # Move .deb, .rpm, .AppImage, .exe, .dmg and .tar.gz files from artifacts/ to root directory
           if [ -d "artifacts" ]; then
             find artifacts -name "*.deb" -exec mv {} . \; 2>/dev/null || true
             find artifacts -name "*.rpm" -exec mv {} . \; 2>/dev/null || true
             find artifacts -name "*.AppImage" -exec mv {} . \; 2>/dev/null || true
             find artifacts -name "*.exe" -exec mv {} . \; 2>/dev/null || true
+            find artifacts -name "*.dmg" -exec mv {} . \; 2>/dev/null || true
             find artifacts -name "*.tar.gz" -exec mv {} . \; 2>/dev/null || true
             rm -rf artifacts
           fi
           echo "=== Files available for release ==="
-          ls -la *.zip *.apk *.aab *.ipa *.deb *.rpm *.AppImage *.exe *.tar.gz 2>/dev/null || echo "Listing files..."
-          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -ls
+          ls -la *.zip *.apk *.aab *.ipa *.deb *.rpm *.AppImage *.exe *.dmg *.tar.gz 2>/dev/null || echo "Listing files..."
+          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.tar.gz" \) -ls
 
       - name: Generate SHA256 checksums
         run: |
@@ -3693,7 +3694,7 @@ jobs:
           echo "# Generated on $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> SHA256SUMS.txt
           echo "" >> SHA256SUMS.txt
           # Add checksums for any files found
-          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.tar.gz" \) -exec sha256sum {} \; | sed 's|\./||' >> SHA256SUMS.txt
+          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.tar.gz" \) -exec sha256sum {} \; | sed 's|\./||' >> SHA256SUMS.txt
           echo "=== SHA256 Checksums ==="
           cat SHA256SUMS.txt
 
@@ -3740,7 +3741,7 @@ jobs:
           ARTIFACTS_JSON="["
           FIRST=true
 
-          for file in $(find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" \) | sort); do
+          for file in $(find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" \) | sort); do
             filename=$(basename "$file")
             filesize=$(stat -c%s "$file")
             filesize_human=$(du -h "$file" | cut -f1)
@@ -3818,14 +3819,15 @@ jobs:
           RPM_COUNT=$(find . -name "*.rpm" 2>/dev/null | wc -l)
           APPIMAGE_COUNT=$(find . -name "*.AppImage" 2>/dev/null | wc -l)
           EXE_COUNT=$(find . -name "*.exe" 2>/dev/null | wc -l)
-          TOTAL_COUNT=$((APK_COUNT + AAB_COUNT + IPA_COUNT + ZIP_COUNT + DEB_COUNT + RPM_COUNT + APPIMAGE_COUNT + EXE_COUNT))
+          DMG_COUNT=$(find . -name "*.dmg" 2>/dev/null | wc -l)
+          TOTAL_COUNT=$((APK_COUNT + AAB_COUNT + IPA_COUNT + ZIP_COUNT + DEB_COUNT + RPM_COUNT + APPIMAGE_COUNT + EXE_COUNT + DMG_COUNT))
 
           # List all artifacts with sizes
           echo "## 📦 Build Artifacts" > release_notes.md
           echo "" >> release_notes.md
           echo "| File | Size |" >> release_notes.md
           echo "|------|------|" >> release_notes.md
-          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md
+          find . -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" \) -exec sh -c 'echo "| $(basename {}) | $(du -h {} | cut -f1) |"' \; >> release_notes.md
 
           echo "" >> release_notes.md
           echo "---" >> release_notes.md
@@ -3846,6 +3848,7 @@ jobs:
           echo "| 🐧 DEBs | $DEB_COUNT |" >> release_notes.md
           echo "| 📦 RPMs | $RPM_COUNT |" >> release_notes.md
           echo "| 🖼️ AppImages | $APPIMAGE_COUNT |" >> release_notes.md
+          echo "| 🍎 DMGs | $DMG_COUNT |" >> release_notes.md
           echo "| **Total Artifacts** | **$TOTAL_COUNT** |" >> release_notes.md
 
           echo "" >> release_notes.md
@@ -4070,6 +4073,7 @@ jobs:
             *.rpm
             *.AppImage
             *.exe
+            *.dmg
             *.tar.gz
             SHA256SUMS.txt
             build-manifest.json
