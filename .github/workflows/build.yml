@@ -4171,7 +4171,7 @@ jobs:
   publish-npm-lystcode:
     needs: create-release
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.publish_npm_lystcode == 'true' && github.event.inputs.build_lystcode == 'true' }}
+    if: ${{ github.event.inputs.publish_npm_lystcode == 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
