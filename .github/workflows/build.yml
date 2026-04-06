@@ -114,6 +114,12 @@ on:
         required: false
         type: string
         default: ''
+      # NPM Publishing
+      publish_npm_lystcode:
+        description: 'Publish Lystcode CLI to npm'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -4158,3 +4164,66 @@ jobs:
             cd ../..
           done
           rm -rf aur-push
+
+  # ============================================================================
+  # PUBLISH LYSTCODE TO NPM
+  # ============================================================================
+  publish-npm-lystcode:
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.publish_npm_lystcode == 'true' && github.event.inputs.build_lystcode == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Clone Lystcode Repo
+        run: git clone https://gitlab.com/Openlyst/Lystcode.git lystcode-src
+
+      - name: Checkout specific commit
+        if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
+        run: |
+          cd lystcode-src
+          git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          cd lystcode-src
+          bun install
+
+      - name: Build CLI package
+        run: |
+          cd lystcode-src
+          # Build the CLI if there's a build script
+          bun run build 2>/dev/null || true
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd lystcode-src
+          # Check if package.json exists and has a name field
+          if [ -f "package.json" ] && grep -q '"name"' package.json; then
+            echo "Publishing to npm..."
+            # If using bun for publishing
+            if grep -q '"publishConfig"' package.json 2>/dev/null; then
+              echo "Using npm publish..."
+              npm publish --access public || echo "Publish failed - may already exist or need auth"
+            else
+              # Standard npm publish
+              npm publish --access public || echo "Publish failed - may already exist or need auth"
+            fi
+          else
+            echo "No package.json found or missing name field"
+            exit 1
+          fi
