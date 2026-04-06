@@ -4169,7 +4169,6 @@ jobs:
   # PUBLISH LYSTCODE TO NPM
   # ============================================================================
   publish-npm-lystcode:
-    needs: create-release
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.publish_npm_lystcode == 'true' }}
     steps:
