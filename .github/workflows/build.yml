@@ -120,6 +120,11 @@ on:
         required: false
         type: boolean
         default: false
+      npm_version_lystcode:
+        description: 'Version for npm publish (e.g., 1.0.0). If empty, uses git tag or defaults to 0.0.1'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -4199,6 +4204,21 @@ jobs:
           cd lystcode-src
           # Build the CLI if there's a build script
           bun run build 2>/dev/null || true
+
+      - name: Setup version for publish
+        run: |
+          cd lystcode-src
+          # Get version from apps/desktop/package.json (same as desktop builds)
+          if [ "${{ github.event.inputs.npm_version_lystcode }}" != "" ]; then
+            VERSION="${{ github.event.inputs.npm_version_lystcode }}"
+          else
+            VERSION=$(grep '"version":' apps/desktop/package.json | sed 's/"version": "//g' | sed 's/"//g' | sed 's/,//g' | tr -d ' ')
+          fi
+          echo "Setting version to: $VERSION"
+          # Update root package.json with version for npm publish
+          cat package.json | jq --arg version "$VERSION" '.version = $version' > package.json.tmp
+          mv package.json.tmp package.json
+          cat package.json | grep '"version"'
 
       - name: Setup Node.js for npm publish
         uses: actions/setup-node@v4
