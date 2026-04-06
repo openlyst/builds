@@ -857,6 +857,7 @@ AUR_PACKAGES = {
     'klit-bin': ('klit', 'klit', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'doudou-bin': ('doudou', 'doudou', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'docan-bin': ('docan', 'docan', None, 'data/flutter_assets/assets/icons/icon.png'),
+    'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
 }
 
 # GitHub repo for build workflow releases (unstable AUR packages use these download URLs)
