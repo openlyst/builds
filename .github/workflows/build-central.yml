@@ -1,0 +1,917 @@
+name: Centralized Builder
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at 00:00 UTC for nightly builds
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - nightly
+          - pre-release
+          - stable
+        default: 'nightly'
+      commit_hash:
+        description: 'Doudou commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: 'stable'
+
+jobs:
+  # ============================================================================
+  # SETUP AND METADATA FETCH
+  # ============================================================================
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      build_type: ${{ steps.build_type.outputs.build_type }}
+      release_tag: ${{ steps.release_tag.outputs.tag }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      commit_hash: ${{ steps.commit.outputs.hash }}
+    steps:
+      - name: Set build type
+        id: build_type
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "build_type=nightly" >> $GITHUB_OUTPUT
+          else
+            echo "build_type=${{ github.event.inputs.build_type }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/doudou.git doudou-source
+
+      - name: Checkout specific commit
+        id: commit
+        if: ${{ github.event.inputs.commit_hash != '' }}
+        working-directory: doudou-source
+        run: |
+          git checkout ${{ github.event.inputs.commit_hash }}
+          echo "hash=${{ github.event.inputs.commit_hash }}" >> $GITHUB_OUTPUT
+
+      - name: Get commit hash
+        id: commit_hash
+        if: ${{ github.event.inputs.commit_hash == '' }}
+        working-directory: doudou-source
+        run: |
+          HASH=$(git rev-parse HEAD)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Get version from pubspec
+        id: version
+        working-directory: doudou-source
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Determine release tag
+        id: release_tag
+        run: |
+          BUILD_TYPE="${{ steps.build_type.outputs.build_type }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          DATE="${{ steps.version.outputs.build_date }}"
+          
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            TAG="nightly-$DATE"
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            TAG="v${VERSION}-pre"
+          else
+            TAG="v${VERSION}"
+          fi
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Fetch changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD_TYPE="${{ steps.build_type.outputs.build_type }}"
+          
+          # For nightly, use a generic message
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            CHANGELOG="# Nightly Build ${{ steps.version.outputs.build_date }}\n\nAutomated nightly build from main branch."
+            echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+          else
+            # Fetch changelog from GitLab
+            URL="https://gitlab.com/api/v4/projects/Openlyst%2Fdoudou/repository/files/changelog%2F${VERSION}.md/raw?ref=main"
+            RESPONSE=$(curl -s -w "\n%{http_code}" "$URL")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            CONTENT=$(echo "$RESPONSE" | head -n-1)
+            
+            if [ "$HTTP_CODE" == "200" ]; then
+              # Convert newlines for GitHub Output
+              CHANGELOG=$(echo "$CONTENT" | sed ':a;N;$!ba;s/\n/\\n/g')
+              echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+            else
+              CHANGELOG="# $VERSION\n\nChangelog not found."
+              echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-source
+          path: doudou-source
+
+  # ============================================================================
+  # IOS BUILD
+  # ============================================================================
+  build-ios:
+    needs: setup
+    runs-on: macos-latest
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.name }}
+      artifact_path: ${{ steps.artifact.outputs.path }}
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: doudou-source
+          path: .
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install iOS Rust targets
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add x86_64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+
+      - name: Build iOS (No Code Signing)
+        run: |
+          flutter pub get
+
+          # Work around terminate_restart Swift compile failure
+          PLUGIN_SWIFT=$(find "$HOME/.pub-cache" -type f -path "*/terminate_restart*/ios/Classes/TerminateRestartPlugin.swift" | head -n 1)
+          if [ -n "$PLUGIN_SWIFT" ] && [ -f "$PLUGIN_SWIFT" ]; then
+            perl -i -pe 's/if let flutterEngine = registrar\.messenger\(\) as\??!? FlutterEngine \{/if true {\n            let flutterEngine = registrar.messenger() as! FlutterEngine/' "$PLUGIN_SWIFT"
+          fi
+
+          dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
+
+          if [ -f "Makefile" ]; then
+            make ios || true
+          fi
+
+          if [ -f "scripts/build-ios.sh" ]; then
+            bash scripts/build-ios.sh || true
+          fi
+
+          flutter build ios --release --no-codesign
+
+      - name: Create unsigned IPA
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r doudou-${VERSION}-${DATE}-ios-unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Set artifact info
+        id: artifact
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          echo "name=doudou-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
+          echo "path=doudou-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-ios
+          path: doudou-*-ios-unsigned.ipa
+
+  # ============================================================================
+  # ANDROID BUILD
+  # ============================================================================
+  build-android:
+    needs: setup
+    runs-on: ubuntu-latest
+    outputs:
+      apk_name: ${{ steps.artifact.outputs.apk_name }}
+      aab_name: ${{ steps.artifact.outputs.aab_name }}
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: doudou-source
+          path: .
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build Android
+        run: |
+          flutter pub get
+          flutter build apk --release
+          flutter build appbundle --release
+
+      - name: Rename artifacts
+        id: artifact
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          
+          mv build/app/outputs/flutter-apk/app-release.apk doudou-${VERSION}-${DATE}.apk
+          mv build/app/outputs/bundle/release/app-release.aab doudou-${VERSION}-${DATE}.aab
+          
+          echo "apk_name=doudou-${VERSION}-${DATE}.apk" >> $GITHUB_OUTPUT
+          echo "aab_name=doudou-${VERSION}-${DATE}.aab" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-android
+          path: |
+            doudou-*.apk
+            doudou-*.aab
+
+  # ============================================================================
+  # WINDOWS BUILD
+  # ============================================================================
+  build-windows:
+    needs: setup
+    runs-on: windows-latest
+    outputs:
+      zip_name: ${{ steps.artifact.outputs.zip_name }}
+      exe_name: ${{ steps.artifact.outputs.exe_name }}
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: doudou-source
+          path: .
+
+      - name: Fix RepeatMode conflict with Flutter
+        shell: bash
+        run: |
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Patch clipboard plugin
+        shell: bash
+        run: |
+          cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          [ -d "$cache" ] || cache="/c/Users/$USER/AppData/Local/Pub/Cache"
+          f=$(find "$cache" -name "clipboard_plugin.cpp" -path "*/clipboard/*" 2>/dev/null | head -1)
+          if [ -n "$f" ] && grep -q "headerSize" "$f"; then
+            sed -i.bak '/headerSize.*=/a\  (void)headerSize;' "$f" && rm -f "${f}.bak" || true
+          fi
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create ZIP
+        run: |
+          $version = "${{ needs.setup.outputs.version }}"
+          $date = "${{ needs.setup.outputs.build_date }}"
+          $filename = "doudou-${version}-${date}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
+
+      - name: Create Inno Setup Script
+        run: |
+          $version = "${{ needs.setup.outputs.version }}"
+          $date = "${{ needs.setup.outputs.build_date }}"
+          @"
+          [Setup]
+          AppName=Doudou
+          AppVersion=$version
+          AppPublisher=Openlyst
+          DefaultDirName={autopf}\Doudou
+          DefaultGroupName=Doudou
+          OutputDir=.
+          OutputBaseFilename=doudou-$version-$date-windows-x64-setup
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+          WizardStyle=modern
+          UninstallDisplayIcon={app}\doudou.exe
+          PrivilegesRequired=lowest
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\Doudou"; Filename: "{app}\doudou.exe"
+          Name: "{group}\{cm:UninstallProgram,Doudou}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Doudou"; Filename: "{app}\doudou.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\doudou.exe"; Description: "{cm:LaunchProgram,Doudou}"; Flags: nowait postinstall skipifsilent
+          "@ | Out-File -FilePath installer.iss -Encoding UTF8
+
+      - name: Build Windows Installer
+        run: & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Set artifact info
+        id: artifact
+        run: |
+          $version = "${{ needs.setup.outputs.version }}"
+          $date = "${{ needs.setup.outputs.build_date }}"
+          echo "zip_name=doudou-${version}-${date}-windows-x64.zip" >> $env:GITHUB_OUTPUT
+          echo "exe_name=doudou-${version}-${date}-windows-x64-setup.exe" >> $env:GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-windows
+          path: |
+            doudou-*-windows-x64.zip
+            doudou-*-windows-x64-setup.exe
+
+  # ============================================================================
+  # LINUX BUILD
+  # ============================================================================
+  build-linux:
+    needs: setup
+    runs-on: ubuntu-latest
+    outputs:
+      zip_name: ${{ steps.artifact.outputs.zip_name }}
+      appimage_name: ${{ steps.artifact.outputs.appimage_name }}
+      deb_name: ${{ steps.artifact.outputs.deb_name }}
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: doudou-source
+          path: .
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - name: Build Linux
+        run: |
+          flutter pub get
+          flutter build linux --release
+
+      - name: Create ZIP
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          cd build/linux/x64/release
+          zip -r ../../../doudou-${VERSION}-${DATE}-linux-x64.zip .
+          cd ../../..
+
+      - name: Create AppImage
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          
+          # Install appimage-builder dependencies
+          sudo apt-get install -y file zsync desktop-file-utils libgdk-pixbuf2.0-bin fakeroot strace fuse
+            
+          # Create basic AppImage (simplified - may need appimage-builder for full support)
+          mkdir -p AppImage/usr/bin
+          cp -r build/linux/x64/release/* AppImage/usr/bin/
+          
+          # Create AppRun
+          cat > AppImage/AppRun << 'EOF'
+          #!/bin/bash
+          exec "$(dirname "$0")/usr/bin/doudou"
+          EOF
+          chmod +x AppImage/AppRun
+          
+          # Create desktop file
+          cat > AppImage/doudou.desktop << 'EOF'
+          [Desktop Entry]
+          Name=Doudou
+          Exec=doudou
+          Icon=doudou
+          Type=Application
+          Categories=Music;
+          EOF
+          
+          # Download icon (placeholder)
+          wget -O AppImage/doudou.png https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
+          
+          # Package
+          cd AppImage
+          zip -r ../doudou-${VERSION}-${DATE}-linux-x86_64.AppImage .
+          cd ..
+
+      - name: Create DEB
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          
+          sudo apt-get install -y dpkg-deb
+          
+          mkdir -p deb-package/DEBIAN
+          mkdir -p deb-package/opt/doudou
+          mkdir -p deb-package/usr/share/applications
+          mkdir -p deb-package/usr/share/icons/hicolor/256x256/apps
+          
+          cp -r build/linux/x64/release/* deb-package/opt/doudou/
+          
+          cat > deb-package/DEBIAN/control << EOF
+          Package: doudou
+          Version: ${VERSION}
+          Architecture: amd64
+          Maintainer: Openlyst
+          Description: Music player for self-hosted services
+          EOF
+          
+          cat > deb-package/usr/share/applications/doudou.desktop << 'EOF'
+          [Desktop Entry]
+          Name=Doudou
+          Exec=/opt/doudou/doudou
+          Icon=doudou
+          Type=Application
+          Categories=Music;
+          EOF
+          
+          wget -O deb-package/usr/share/icons/hicolor/256x256/apps/doudou.png https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
+          
+          dpkg-deb --build deb-package doudou-${VERSION}-${DATE}-linux-amd64.deb
+
+      - name: Set artifact info
+        id: artifact
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          echo "zip_name=doudou-${VERSION}-${DATE}-linux-x64.zip" >> $GITHUB_OUTPUT
+          echo "appimage_name=doudou-${VERSION}-${DATE}-linux-x86_64.AppImage" >> $GITHUB_OUTPUT
+          echo "deb_name=doudou-${VERSION}-${DATE}-linux-amd64.deb" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-linux
+          path: |
+            doudou-*-linux-x64.zip
+            doudou-*-linux-x86_64.AppImage
+            doudou-*-linux-amd64.deb
+
+  # ============================================================================
+  # MACOS BUILD
+  # ============================================================================
+  build-macos:
+    needs: setup
+    runs-on: macos-latest
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.name }}
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: doudou-source
+          path: .
+
+      - name: Fix RepeatMode conflict with Flutter
+        run: |
+          AUDIO_HANDLER="lib/services/audio/unified_audio_handler.dart"
+          if [ -f "$AUDIO_HANDLER" ]; then
+            perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$AUDIO_HANDLER"
+            find lib -name "*.dart" -exec grep -l "unified_audio_handler" {} \; | while read f; do
+              [ "$f" = "$AUDIO_HANDLER" ] || ! grep -q '\bRepeatMode\b' "$f" || perl -i -pe 's/\bRepeatMode\b/AudioRepeatMode/g' "$f"
+            done
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install macOS Rust targets
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+
+      - name: Build macOS
+        run: |
+          flutter pub get
+          dart run flutter_rust_bridge_codegen build-macos --release 2>/dev/null || true
+          
+          if [ -f "Makefile" ]; then
+            make macos || true
+          fi
+          
+          flutter build macos --release
+
+      - name: Create universal ZIP
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../doudou-${VERSION}-${DATE}-macos-unsigned.zip .
+
+      - name: Set artifact info
+        id: artifact
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          echo "name=doudou-${VERSION}-${DATE}-macos-unsigned.zip" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudou-macos
+          path: doudou-*-macos-unsigned.zip
+
+  # ============================================================================
+  # GENERATE METADATA AND RELEASE
+  # ============================================================================
+  generate-metadata:
+    needs: [setup, build-ios, build-android, build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.created }}
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create build-v2 directory
+        run: mkdir -p build-v2
+
+      - name: Generate altstore.json
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          TAG="${{ needs.setup.outputs.release_tag }}"
+          CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          
+          # Convert changelog newlines back
+          CHANGELOG=$(echo "$CHANGELOG" | sed 's/\\n/\n/g')
+          
+          cat > build-v2/altstore.json << EOF
+          {
+            "name": "OpenLyst iOS Apps",
+            "subtitle": "Free and open source iOS applications",
+            "description": "A curated collection of free and open source iOS applications from OpenLyst.",
+            "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+            "headerURL": "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads",
+            "website": "https://openlyst.ink",
+            "tintColor": "#dc2626",
+            "featuredApps": ["doudou"],
+            "apps": [
+              {
+                "name": "Doudou",
+                "bundleIdentifier": "doudou",
+                "developerName": "OpenLyst Developer",
+                "subtitle": "Music player for self-hosted services",
+                "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+                "tintColor": "#dc2626",
+                "category": "other",
+                "versions": [
+                  {
+                    "version": "$VERSION",
+                    "buildVersion": "1",
+                    "date": "$DATE",
+                    "downloadURL": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa",
+                    "size": $(stat -f%z artifacts/doudou-ios/doudou-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/doudou-ios/doudou-*-ios-unsigned.ipa),
+                    "localizedDescription": "$CHANGELOG"
+                  }
+                ],
+                "screenshots": [
+                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
+                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
+                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+                ]
+              }
+            ],
+            "news": []
+          }
+          EOF
+
+      - name: Generate apps.json
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
+          TAG="${{ needs.setup.outputs.release_tag }}"
+          COMMIT="${{ needs.setup.outputs.commit_hash }}"
+          CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          
+          # Convert changelog newlines back
+          CHANGELOG=$(echo "$CHANGELOG" | sed 's/\\n/\n/g')
+          
+          cat > build-v2/apps.json << EOF
+          {
+            "bundleIdentifier": "doudou",
+            "applicationId": "gitlab.openlyst.doudou",
+            "name": {
+              "en": "Doudou",
+              "zh": "豆豆",
+              "ru": "Doudou"
+            },
+            "subtitle": {
+              "en": "Music player for self-hosted services",
+              "zh": "自托管服务的音乐播放器",
+              "ru": "Музыкальный плеер для самостоятельного хостинга"
+            },
+            "localizedDescription": {
+              "en": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+              "zh": "豆豆是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
+              "ru": "Doudou — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
+            },
+            "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+            "tintColor": "#dc2626",
+            "platforms": [
+              "iOS",
+              "macOS",
+              "Windows",
+              "Linux",
+              "Android"
+            ],
+            "screenshots": [
+              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
+              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
+              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+            ],
+            "deprecated": false,
+            "versions": [
+              {
+                "version": "$VERSION",
+                "date": "$DATE",
+                "releaseTag": "$TAG",
+                "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/$COMMIT",
+                "platforms": [
+                  "iOS",
+                  "macOS",
+                  "Windows",
+                  "Linux",
+                  "Android"
+                ],
+                "platformInstall": {
+                  "iOS": "Add the altstore repo https://github.com/openlyst/builds/raw/main/build-v2/altstore.json",
+                  "Android": "Download APK from GitHub Releases",
+                  "macOS": "Download from GitHub Releases",
+                  "Windows": "Download from GitHub Releases",
+                  "Linux": "Download from GitHub Releases"
+                },
+                "downloads": {
+                  "iOS": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa",
+                  "macOS": {
+                    "x86_64": "",
+                    "arm64": "",
+                    "universal": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-macos-unsigned.zip",
+                    "homebrew": ""
+                  },
+                  "Windows": {
+                    "zip": {
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-windows-x64.zip",
+                      "arm64": ""
+                    },
+                    "exe": {
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-windows-x64-setup.exe",
+                      "arm64": ""
+                    },
+                    "msi": {
+                      "x86_64": "",
+                      "arm64": ""
+                    },
+                    "msix": {
+                      "x86_64": "",
+                      "arm64": ""
+                    },
+                    "portable": {
+                      "x86_64": "",
+                      "arm64": ""
+                    },
+                    "winget": "",
+                    "chocolatey": "",
+                    "scoop": ""
+                  },
+                  "Linux": {
+                    "zip": {
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-x64.zip",
+                      "arm64": ""
+                    },
+                    "appimage": {
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-x86_64.AppImage",
+                      "arm64": ""
+                    },
+                    "deb": {
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-amd64.deb",
+                      "arm64": ""
+                    },
+                    "aur": {
+                      "x86_64": "",
+                      "arm64": ""
+                    }
+                  },
+                  "Android": {
+                    "apk": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}.apk",
+                    "aab": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}.aab"
+                  }
+                },
+                "localizedDescription": {
+                  "en": "$CHANGELOG",
+                  "zh": "$CHANGELOG",
+                  "ru": "$CHANGELOG"
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Validate JSON files
+        run: |
+          python3 -m json.tool build-v2/altstore.json > /dev/null
+          python3 -m json.tool build-v2/apps.json > /dev/null
+
+      - name: Create GitHub Release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.setup.outputs.release_tag }}
+          release_name: Doudou ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
+          body: ${{ needs.setup.outputs.changelog }}
+          draft: false
+          prerelease: ${{ needs.setup.outputs.build_type != 'stable' }}
+
+      - name: Upload artifacts to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-ios/doudou-*-ios-unsigned.ipa
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-ios-unsigned.ipa
+          asset_content_type: application/octet-stream
+
+      - name: Upload APK to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-android/doudou-*.apk
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}.apk
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Upload AAB to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-android/doudou-*.aab
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}.aab
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows ZIP to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-windows/doudou-*-windows-x64.zip
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-windows-x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload Windows EXE to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-windows/doudou-*-windows-x64-setup.exe
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-windows-x64-setup.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux ZIP to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-linux/doudou-*-linux-x64.zip
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux AppImage to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-linux/doudou-*-linux-x86_64.AppImage
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-x86_64.AppImage
+          asset_content_type: application/vnd.appimage
+
+      - name: Upload Linux DEB to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-linux/doudou-*-linux-amd64.deb
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: Upload macOS ZIP to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./artifacts/doudou-macos/doudou-*-macos-unsigned.zip
+          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-macos-unsigned.zip
+          asset_content_type: application/zip
+
+      - name: Upload metadata files
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-v2-metadata
+          path: build-v2/
+
+  # ============================================================================
+  # COMMIT METADATA TO REPOSITORY
+  # ============================================================================
+  commit-metadata:
+    needs: generate-metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: build-v2-metadata
+          path: build-v2
+
+      - name: Commit metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add build-v2/
+          git diff --staged --quiet || git commit -m "Update build-v2 metadata for ${{ needs.generate-metadata.outputs.release_created }}"
+          git push
