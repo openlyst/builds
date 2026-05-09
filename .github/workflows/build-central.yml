@@ -400,6 +400,7 @@ jobs:
       zip_name: ${{ steps.artifact.outputs.zip_name }}
       appimage_name: ${{ steps.artifact.outputs.appimage_name }}
       deb_name: ${{ steps.artifact.outputs.deb_name }}
+      build_status: ${{ steps.status.outputs.status }}
     steps:
       - name: Download source
         uses: actions/download-artifact@v4
@@ -482,6 +483,11 @@ jobs:
           echo "zip_name=doudou-${VERSION}-${DATE}-linux-x64.zip" >> $GITHUB_OUTPUT
           echo "appimage_name=doudou-${VERSION}-${DATE}-linux-x86_64.AppImage" >> $GITHUB_OUTPUT
           echo "deb_name=doudou-${VERSION}-${DATE}-linux-amd64.deb" >> $GITHUB_OUTPUT
+
+      - name: Set build status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -830,6 +836,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload Linux ZIP to release
+        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -840,6 +847,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Linux AppImage to release
+        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -850,6 +858,7 @@ jobs:
           asset_content_type: application/vnd.appimage
 
       - name: Upload Linux DEB to release
+        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
