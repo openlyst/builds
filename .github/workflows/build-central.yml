@@ -776,14 +776,14 @@ jobs:
           draft: false
           prerelease: ${{ needs.setup.outputs.build_type != 'stable' }}
 
-      - name: Upload artifacts to release
+      - name: Upload iOS IPA to release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-ios/doudou-*-ios-unsigned.ipa
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-ios-unsigned.ipa
+          asset_path: ./artifacts/doudou-ios/${{ needs.build-ios.outputs.artifact_name }}
+          asset_name: ${{ needs.build-ios.outputs.artifact_name }}
           asset_content_type: application/octet-stream
 
       - name: Upload APK to release
@@ -792,8 +792,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-android/doudou-*.apk
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}.apk
+          asset_path: ./artifacts/doudou-android/${{ needs.build-android.outputs.apk_name }}
+          asset_name: ${{ needs.build-android.outputs.apk_name }}
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload AAB to release
@@ -802,8 +802,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-android/doudou-*.aab
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}.aab
+          asset_path: ./artifacts/doudou-android/${{ needs.build-android.outputs.aab_name }}
+          asset_name: ${{ needs.build-android.outputs.aab_name }}
           asset_content_type: application/octet-stream
 
       - name: Upload Windows ZIP to release
@@ -812,8 +812,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-windows/doudou-*-windows-x64.zip
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-windows-x64.zip
+          asset_path: ./artifacts/doudou-windows/${{ needs.build-windows.outputs.zip_name }}
+          asset_name: ${{ needs.build-windows.outputs.zip_name }}
           asset_content_type: application/zip
 
       - name: Upload Windows EXE to release
@@ -822,8 +822,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-windows/doudou-*-windows-x64-setup.exe
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-windows-x64-setup.exe
+          asset_path: ./artifacts/doudou-windows/${{ needs.build-windows.outputs.exe_name }}
+          asset_name: ${{ needs.build-windows.outputs.exe_name }}
           asset_content_type: application/octet-stream
 
       - name: Upload Linux ZIP to release
@@ -833,8 +833,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/doudou-*-linux-x64.zip
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-x64.zip
+          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.zip_name }}
+          asset_name: ${{ needs.build-linux.outputs.zip_name }}
           asset_content_type: application/zip
 
       - name: Upload Linux AppImage to release
@@ -844,8 +844,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/artifacts/doudou-*-linux-x86_64.AppImage
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-x86_64.AppImage
+          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.appimage_name }}
+          asset_name: ${{ needs.build-linux.outputs.appimage_name }}
           asset_content_type: application/vnd.appimage
 
       - name: Upload Linux DEB to release
@@ -855,8 +855,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/artifacts/doudou-*-linux-amd64.deb
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-amd64.deb
+          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.deb_name }}
+          asset_name: ${{ needs.build-linux.outputs.deb_name }}
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload macOS ZIP to release
@@ -865,8 +865,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-macos/doudou-*-macos-unsigned.zip
-          asset_name: doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-macos-unsigned.zip
+          asset_path: ./artifacts/doudou-macos/${{ needs.build-macos.outputs.artifact_name }}
+          asset_name: ${{ needs.build-macos.outputs.artifact_name }}
           asset_content_type: application/zip
 
       - name: Upload metadata files
