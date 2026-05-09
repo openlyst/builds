@@ -365,6 +365,9 @@ jobs:
           Filename: "{app}\doudou.exe"; Description: "{cm:LaunchProgram,Doudou}"; Flags: nowait postinstall skipifsilent
           "@ | Out-File -FilePath installer.iss -Encoding UTF8
 
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
       - name: Build Windows Installer
         run: "& '${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe' installer.iss"
 
