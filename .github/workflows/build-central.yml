@@ -361,7 +361,7 @@ jobs:
           "@ | Out-File -FilePath installer.iss -Encoding UTF8
 
       - name: Build Windows Installer
-        run: "& '${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe' installer.iss"
+        run: "& '${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe' installer.iss"
 
       - name: Set artifact info
         id: artifact
