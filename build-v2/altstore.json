@@ -9,10 +9,10 @@
   "featuredApps": ["doudou"],
   "apps": [
     {
-      "name": "Doudou",
-      "bundleIdentifier": "doudou",
+      "name": "Doudou Beta",
+      "bundleIdentifier": "doudou.pre",
       "developerName": "OpenLyst Developer",
-      "subtitle": "Music player for self-hosted services",
+      "subtitle": "Pre-release builds - test upcoming features",
       "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
       "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/images/icon.png",
       "tintColor": "#dc2626",
@@ -22,8 +22,8 @@
           "version": "19.0.0",
           "buildVersion": "1",
           "date": "2026-05-10",
-          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
-          "size": 14221567,
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-234840/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
+          "size": 14221568,
           "localizedDescription": "# 19.0.0\n\n- settings panels are now scrollable.\n- adds a new radio mode for youtube music\n- Ensure other servers cant effect other servers \n- Youtube music will show some songs if you got nothing added \n- fix the desktop bottom bar favorite button not updaing when cliekd until state refershed\n- The navbar action are now centred\n- Swithing servers will cancle the current queue"
         }
       ],
