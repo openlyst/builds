@@ -83,14 +83,9 @@ jobs:
           BUILD_TYPE="${{ steps.build_type.outputs.build_type }}"
           VERSION="${{ steps.version.outputs.version }}"
           DATE="${{ steps.version.outputs.build_date }}"
+          TIME=$(date +%H%M%S)
           
-          if [ "$BUILD_TYPE" == "nightly" ]; then
-            TAG="nightly-$DATE"
-          elif [ "$BUILD_TYPE" == "pre-release" ]; then
-            TAG="v${VERSION}-pre"
-          else
-            TAG="v${VERSION}"
-          fi
+          TAG="app-update-${DATE}-${TIME}"
           
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
@@ -763,16 +758,6 @@ jobs:
         run: |
           python3 -m json.tool build-v2/altstore.json > /dev/null
           python3 -m json.tool build-v2/apps.json > /dev/null
-
-      - name: Delete existing release if exists
-        run: |
-          TAG="${{ needs.setup.outputs.release_tag }}"
-          if gh release view "$TAG" &>/dev/null; then
-            gh release delete "$TAG" --yes || true
-            git push origin ":refs/tags/$TAG" || true
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         id: release
