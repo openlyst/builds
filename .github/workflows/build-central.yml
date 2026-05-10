@@ -552,7 +552,7 @@ jobs:
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           cd build/macos/Build/Products/Release
-          zip -r ../../../../doudou-${VERSION}-${DATE}-macos-unsigned.zip *.app
+          zip -r $GITHUB_WORKSPACE/doudou-${VERSION}-${DATE}-macos-unsigned.zip *.app
 
       - name: Set artifact info
         id: artifact
