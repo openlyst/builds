@@ -595,8 +595,24 @@ jobs:
           DATE="${{ needs.setup.outputs.build_date }}"
           TAG="${{ needs.setup.outputs.release_tag }}"
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
-          
+
+          # Determine app name and bundle identifier based on build type
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            APP_NAME="Doudou Nightly"
+            BUNDLE_ID="doudou.nightly"
+            SUBTITLE="Nightly builds - latest features and bug fixes"
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            APP_NAME="Doudou Beta"
+            BUNDLE_ID="doudou.pre"
+            SUBTITLE="Pre-release builds - test upcoming features"
+          else
+            APP_NAME="Doudou"
+            BUNDLE_ID="doudou"
+            SUBTITLE="Music player for self-hosted services"
+          fi
+
           cat > build-v2/altstore.json << EOF
           {
             "name": "OpenLyst iOS Apps",
@@ -609,10 +625,10 @@ jobs:
             "featuredApps": ["doudou"],
             "apps": [
               {
-                "name": "Doudou",
-                "bundleIdentifier": "doudou",
+                "name": "$APP_NAME",
+                "bundleIdentifier": "$BUNDLE_ID",
                 "developerName": "OpenLyst Developer",
-                "subtitle": "Music player for self-hosted services",
+                "subtitle": "$SUBTITLE",
                 "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
                 "iconURL": "$IMAGE_BASE_URL/icon.png",
                 "tintColor": "#dc2626",
@@ -645,8 +661,18 @@ jobs:
           TAG="${{ needs.setup.outputs.release_tag }}"
           COMMIT=""
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
-          
+
+          # Determine release type
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            RELEASE_TYPE="nightly"
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            RELEASE_TYPE="pre-release"
+          else
+            RELEASE_TYPE="Stable"
+          fi
+
           cat > build-v2/apps.json << EOF
           {
             "bundleIdentifier": "doudou",
@@ -686,6 +712,7 @@ jobs:
                 "version": "$VERSION",
                 "date": "$DATE",
                 "releaseTag": "$TAG",
+                "releaseType": "$RELEASE_TYPE",
                 "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/$COMMIT",
                 "platforms": [
                   "iOS",
