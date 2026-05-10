@@ -35,7 +35,7 @@
     {
       "version": "19.0.0",
       "date": "2026-05-10",
-      "releaseTag": "app-update-2026-05-10-211945",
+      "releaseTag": "app-update-2026-05-10-221158",
       "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/",
       "platforms": [
         "iOS",
@@ -52,20 +52,20 @@
         "Linux": "Download from GitHub Releases"
       },
       "downloads": {
-        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
+        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
         "macOS": {
           "x86_64": "",
           "arm64": "",
-          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-macos-unsigned.zip",
+          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-macos-unsigned.zip",
           "homebrew": ""
         },
         "Windows": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-windows-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-windows-x64.zip",
             "arm64": ""
           },
           "exe": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-windows-x64-setup.exe",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-windows-x64-setup.exe",
             "arm64": ""
           },
           "msi": {
@@ -86,15 +86,15 @@
         },
         "Linux": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-linux-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-linux-x64.zip",
             "arm64": ""
           },
           "appimage": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-linux-x86_64.AppImage",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-linux-x86_64.AppImage",
             "arm64": ""
           },
           "deb": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10-linux-amd64.deb",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10-linux-amd64.deb",
             "arm64": ""
           },
           "aur": {
@@ -103,8 +103,8 @@
           }
         },
         "Android": {
-          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10.apk",
-          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-211945/doudou-19.0.0-2026-05-10.aab"
+          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10.apk",
+          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-221158/doudou-19.0.0-2026-05-10.aab"
         }
       },
       "localizedDescription": {
