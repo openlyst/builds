@@ -764,6 +764,16 @@ jobs:
           python3 -m json.tool build-v2/altstore.json > /dev/null
           python3 -m json.tool build-v2/apps.json > /dev/null
 
+      - name: Delete existing release if exists
+        run: |
+          TAG="${{ needs.setup.outputs.release_tag }}"
+          if gh release view "$TAG" &>/dev/null; then
+            gh release delete "$TAG" --yes || true
+            git push origin ":refs/tags/$TAG" || true
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release
         id: release
         uses: actions/create-release@v1
