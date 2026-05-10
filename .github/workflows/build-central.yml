@@ -913,8 +913,10 @@ jobs:
             python build.py --target aur --verbose
           elif [ "$BUILD_TYPE" == "nightly" ]; then
             python build.py --target aur --nightly-aur-only --verbose
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            python build.py --target aur --unstable-aur-only --verbose
           else
-            echo "Pre-release builds do not push to AUR"
+            echo "Unknown build type: $BUILD_TYPE"
             exit 0
           fi
 
@@ -922,11 +924,13 @@ jobs:
         run: |
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           if [ "$BUILD_TYPE" == "nightly" ]; then
-            PKG_PATTERN="aur-packages/nightly/"
+            PKG_PATTERN="aur-packages/doudou-nightly/"
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            PKG_PATTERN="aur-packages/doudou-unstable/"
           elif [ "$BUILD_TYPE" == "stable" ]; then
             PKG_PATTERN="aur-packages/doudou-bin/"
           else
-            echo "Pre-release builds do not push to AUR"
+            echo "Unknown build type: $BUILD_TYPE"
             exit 0
           fi
 
@@ -957,11 +961,13 @@ jobs:
         run: |
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           if [ "$BUILD_TYPE" == "nightly" ]; then
-            PKG_PATTERN="aur-packages/nightly/"
+            PKG_PATTERN="aur-packages/doudou-nightly/"
+          elif [ "$BUILD_TYPE" == "pre-release" ]; then
+            PKG_PATTERN="aur-packages/doudou-unstable/"
           elif [ "$BUILD_TYPE" == "stable" ]; then
             PKG_PATTERN="aur-packages/doudou-bin/"
           else
-            echo "Pre-release builds do not push to AUR"
+            echo "Unknown build type: $BUILD_TYPE"
             exit 0
           fi
 
