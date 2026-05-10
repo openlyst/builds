@@ -844,7 +844,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.appimage_name }}
+          asset_path: ./artifacts/doudou-linux/artifacts/${{ needs.build-linux.outputs.appimage_name }}
           asset_name: ${{ needs.build-linux.outputs.appimage_name }}
           asset_content_type: application/vnd.appimage
 
@@ -855,7 +855,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.deb_name }}
+          asset_path: ./artifacts/doudou-linux/artifacts/${{ needs.build-linux.outputs.deb_name }}
           asset_name: ${{ needs.build-linux.outputs.deb_name }}
           asset_content_type: application/vnd.debian.binary-package
 
