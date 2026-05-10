@@ -101,17 +101,17 @@ jobs:
             echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
           else
             # Fetch changelog from GitLab
-            URL="https://gitlab.com/api/v4/projects/Openlyst%2Fdoudou/repository/files/changelog%2F${VERSION}.md/raw?ref=main"
+            URL="https://gitlab.com/Openlyst/doudou/-/raw/main/changelog/${VERSION}.md"
             RESPONSE=$(curl -s -w "\n%{http_code}" "$URL")
             HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
             CONTENT=$(echo "$RESPONSE" | head -n-1)
-            
+
             if [ "$HTTP_CODE" == "200" ]; then
               # Convert newlines for GitHub Output
               CHANGELOG=$(echo "$CONTENT" | sed ':a;N;$!ba;s/\n/\\n/g')
               echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
             else
-              CHANGELOG="# $VERSION\n\nChangelog not found."
+              CHANGELOG=""
               echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
             fi
           fi
@@ -595,14 +595,15 @@ jobs:
           DATE="${{ needs.setup.outputs.build_date }}"
           TAG="${{ needs.setup.outputs.release_tag }}"
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
           
           cat > build-v2/altstore.json << EOF
           {
             "name": "OpenLyst iOS Apps",
             "subtitle": "Free and open source iOS applications",
             "description": "A curated collection of free and open source iOS applications from OpenLyst.",
-            "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
-            "headerURL": "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads",
+            "iconURL": "$IMAGE_BASE_URL/icon.png",
+            "headerURL": "$IMAGE_BASE_URL/header.png",
             "website": "https://openlyst.ink",
             "tintColor": "#dc2626",
             "featuredApps": ["doudou"],
@@ -613,7 +614,7 @@ jobs:
                 "developerName": "OpenLyst Developer",
                 "subtitle": "Music player for self-hosted services",
                 "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
-                "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+                "iconURL": "$IMAGE_BASE_URL/icon.png",
                 "tintColor": "#dc2626",
                 "category": "other",
                 "versions": [
@@ -627,9 +628,9 @@ jobs:
                   }
                 ],
                 "screenshots": [
-                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
-                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
-                  "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+                  "$IMAGE_BASE_URL/screenshots/home.png",
+                  "$IMAGE_BASE_URL/screenshots/nowplaying.png",
+                  "$IMAGE_BASE_URL/screenshots/albums.png"
                 ]
               }
             ],
@@ -642,8 +643,9 @@ jobs:
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           TAG="${{ needs.setup.outputs.release_tag }}"
-          COMMIT="${{ needs.setup.outputs.commit_hash }}"
+          COMMIT=""
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
           
           cat > build-v2/apps.json << EOF
           {
@@ -664,7 +666,7 @@ jobs:
               "zh": "豆豆是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
               "ru": "Doudou — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
             },
-            "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+            "iconURL": "$IMAGE_BASE_URL/icon.png",
             "tintColor": "#dc2626",
             "platforms": [
               "iOS",
@@ -674,9 +676,9 @@ jobs:
               "Android"
             ],
             "screenshots": [
-              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
-              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
-              "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+              "$IMAGE_BASE_URL/screenshots/home.png",
+              "$IMAGE_BASE_URL/screenshots/nowplaying.png",
+              "$IMAGE_BASE_URL/screenshots/albums.png"
             ],
             "deprecated": false,
             "versions": [
