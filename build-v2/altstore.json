@@ -2,8 +2,8 @@
   "name": "OpenLyst iOS Apps",
   "subtitle": "Free and open source iOS applications",
   "description": "A curated collection of free and open source iOS applications from OpenLyst.",
-  "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
-  "headerURL": "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads",
+  "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/images/icon.png",
+  "headerURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/images/header.png",
   "website": "https://openlyst.ink",
   "tintColor": "#dc2626",
   "featuredApps": ["doudou"],
@@ -14,7 +14,7 @@
       "developerName": "OpenLyst Developer",
       "subtitle": "Music player for self-hosted services",
       "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
-      "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+      "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/images/icon.png",
       "tintColor": "#dc2626",
       "category": "other",
       "versions": [
@@ -22,15 +22,15 @@
           "version": "19.0.0",
           "buildVersion": "1",
           "date": "2026-05-10",
-          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
-          "size": 14221567,
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
+          "size": 14221569,
           "localizedDescription": "# 19.0.0\n\n- settings panels are now scrollable.\n- adds a new radio mode for youtube music\n- Ensure other servers cant effect other servers \n- Youtube music will show some songs if you got nothing added \n- fix the desktop bottom bar favorite button not updaing when cliekd until state refershed\n- The navbar action are now centred\n- Swithing servers will cancle the current queue"
         }
       ],
       "screenshots": [
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/home.png",
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/nowplaying.png",
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/albums.png"
       ]
     }
   ],

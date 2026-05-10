@@ -16,7 +16,7 @@
     "zh": "豆豆是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
     "ru": "Doudou — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
   },
-  "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
+  "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/images/icon.png",
   "tintColor": "#dc2626",
   "platforms": [
     "iOS",
@@ -26,16 +26,16 @@
     "Android"
   ],
   "screenshots": [
-    "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
-    "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
-    "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
+    "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/home.png",
+    "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/nowplaying.png",
+    "https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots/albums.png"
   ],
   "deprecated": false,
   "versions": [
     {
       "version": "19.0.0",
       "date": "2026-05-10",
-      "releaseTag": "app-update-2026-05-10-142526",
+      "releaseTag": "app-update-2026-05-10-150232",
       "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/",
       "platforms": [
         "iOS",
@@ -52,20 +52,20 @@
         "Linux": "Download from GitHub Releases"
       },
       "downloads": {
-        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
+        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-ios-unsigned.ipa",
         "macOS": {
           "x86_64": "",
           "arm64": "",
-          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-macos-unsigned.zip",
+          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-macos-unsigned.zip",
           "homebrew": ""
         },
         "Windows": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-windows-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-windows-x64.zip",
             "arm64": ""
           },
           "exe": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-windows-x64-setup.exe",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-windows-x64-setup.exe",
             "arm64": ""
           },
           "msi": {
@@ -86,15 +86,15 @@
         },
         "Linux": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-linux-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-linux-x64.zip",
             "arm64": ""
           },
           "appimage": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-linux-x86_64.AppImage",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-linux-x86_64.AppImage",
             "arm64": ""
           },
           "deb": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10-linux-amd64.deb",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10-linux-amd64.deb",
             "arm64": ""
           },
           "aur": {
@@ -103,8 +103,8 @@
           }
         },
         "Android": {
-          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10.apk",
-          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-142526/doudou-19.0.0-2026-05-10.aab"
+          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10.apk",
+          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-10-150232/doudou-19.0.0-2026-05-10.aab"
         }
       },
       "localizedDescription": {
