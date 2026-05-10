@@ -885,10 +885,10 @@ jobs:
           path: build-v2/
 
   # ============================================================================
-  # PUSH UNSTABLE AUR PACKAGES
+  # PUSH AUR PACKAGES
   # ============================================================================
-  push-aur-unstable:
-    needs: generate-metadata
+  push-aur:
+    needs: [setup, generate-metadata]
     runs-on: ubuntu-latest
     if: always() && !cancelled() && needs.generate-metadata.result == 'success'
     steps:
@@ -906,13 +906,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate unstable AUR PKGBUILDs
-        run: python build.py --target aur --unstable-aur-only --verbose
-
-      - name: Generate .SRCINFO for unstable AUR packages
+      - name: Generate AUR PKGBUILDs
         run: |
+          BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
+          if [ "$BUILD_TYPE" == "stable" ]; then
+            python build.py --target aur --verbose
+          elif [ "$BUILD_TYPE" == "nightly" ]; then
+            python build.py --target aur --nightly-aur-only --verbose
+          else
+            echo "Pre-release builds do not push to AUR"
+            exit 0
+          fi
+
+      - name: Generate .SRCINFO for AUR packages
+        run: |
+          BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            PKG_PATTERN="aur-packages/nightly/"
+          elif [ "$BUILD_TYPE" == "stable" ]; then
+            PKG_PATTERN="aur-packages/doudou-bin/"
+          else
+            echo "Pre-release builds do not push to AUR"
+            exit 0
+          fi
+
           shopt -s nullglob
-          for pkg in aur-packages/*-unstable/; do
+          for pkg in $PKG_PATTERN; do
             pkg=$(basename "$pkg")
             if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
             docker run --rm \
@@ -932,17 +951,27 @@ jobs:
           chmod 600 ~/.ssh/aur_key
           ssh-keyscan -t ed25519,rsa aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Push unstable packages to AUR
+      - name: Push packages to AUR
         env:
           AUR_SSH_KEY_PASSWORD: ${{ secrets.AUR_SSH_KEY_PASSWORD }}
         run: |
+          BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
+          if [ "$BUILD_TYPE" == "nightly" ]; then
+            PKG_PATTERN="aur-packages/nightly/"
+          elif [ "$BUILD_TYPE" == "stable" ]; then
+            PKG_PATTERN="aur-packages/doudou-bin/"
+          else
+            echo "Pre-release builds do not push to AUR"
+            exit 0
+          fi
+
           set -e
           eval "$(ssh-agent -s)"
           printf '%s' "$AUR_SSH_KEY_PASSWORD" | ssh-add ~/.ssh/aur_key 2>/dev/null || true
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
           mkdir -p aur-push
           shopt -s nullglob
-          for pkg in aur-packages/*-unstable/; do
+          for pkg in $PKG_PATTERN; do
             pkg=$(basename "$pkg")
             if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
             echo "Updating AUR package: $pkg"
