@@ -532,6 +532,7 @@ jobs:
 
       - name: Build macOS
         run: |
+          flutter config --enable-macos-desktop
           flutter pub get
           dart run flutter_rust_bridge_codegen build-macos --release 2>/dev/null || true
           
@@ -539,14 +540,17 @@ jobs:
             make macos || true
           fi
           
-          flutter build macos --release
+          flutter build macos --release --build-name="${{ needs.setup.outputs.version }}"
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
 
       - name: Create universal ZIP
         run: |
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           cd build/macos/Build/Products/Release
-          zip -r ../../../../doudou-${VERSION}-${DATE}-macos-unsigned.zip .
+          zip -r ../../../../doudou-${VERSION}-${DATE}-macos-unsigned.zip *.app
 
       - name: Set artifact info
         id: artifact
