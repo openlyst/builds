@@ -496,8 +496,10 @@ jobs:
   build-macos:
     needs: setup
     runs-on: macos-latest
+    continue-on-error: true
     outputs:
       artifact_name: ${{ steps.artifact.outputs.name }}
+      build_status: ${{ steps.status.outputs.status }}
     steps:
       - name: Download source
         uses: actions/download-artifact@v4
@@ -558,6 +560,11 @@ jobs:
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           echo "name=doudou-${VERSION}-${DATE}-macos-unsigned.zip" >> $GITHUB_OUTPUT
+
+      - name: Set build status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -859,6 +866,7 @@ jobs:
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload macOS ZIP to release
+        if: ${{ needs.build-macos.outputs.build_status == 'success' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
