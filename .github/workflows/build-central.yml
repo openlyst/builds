@@ -598,7 +598,7 @@ jobs:
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           ICON_URL="https://openlyst.ink/favicon.svg"
           HEADER_URL="https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads"
-          SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
+          DD_SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
 
           # Determine app name and bundle identifier based on build type
           if [ "$BUILD_TYPE" == "nightly" ]; then
@@ -646,9 +646,9 @@ jobs:
                   }
                 ],
                 "screenshots": [
-                  "$SCREENSHOT_BASE_URL/home.png",
-                  "$SCREENSHOT_BASE_URL/nowplaying.png",
-                  "$SCREENSHOT_BASE_URL/albums.png"
+                  "$DD_SCREENSHOT_BASE_URL/home.png",
+                  "$DD_SCREENSHOT_BASE_URL/nowplaying.png",
+                  "$DD_SCREENSHOT_BASE_URL/albums.png"
                 ]
               }
             ],
