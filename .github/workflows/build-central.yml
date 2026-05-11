@@ -817,7 +817,7 @@ jobs:
                ' build-v2/apps.json > build-v2/apps.json.tmp && mv build-v2/apps.json.tmp build-v2/apps.json
           else
             # Create new file
-            cat > build-v2/apps.json << EOF
+            cat > build-v2/apps.json <<EOF
           {
             "bundleIdentifier": "doudou",
             "applicationId": "gitlab.openlyst.doudou",
@@ -937,6 +937,7 @@ jobs:
             ]
           }
           EOF
+          fi
 
       - name: Validate JSON files
         run: |
