@@ -596,7 +596,9 @@ jobs:
           TAG="${{ needs.setup.outputs.release_tag }}"
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
-          IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
+          ICON_URL="https://openlyst.ink/favicon.svg"
+          HEADER_URL="https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads"
+          SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
 
           # Determine app name and bundle identifier based on build type
           if [ "$BUILD_TYPE" == "nightly" ]; then
@@ -618,8 +620,8 @@ jobs:
             "name": "OpenLyst iOS Apps",
             "subtitle": "Free and open source iOS applications",
             "description": "A curated collection of free and open source iOS applications from OpenLyst.",
-            "iconURL": "$IMAGE_BASE_URL/icon.png",
-            "headerURL": "$IMAGE_BASE_URL/header.png",
+            "iconURL": "$ICON_URL",
+            "headerURL": "$HEADER_URL",
             "website": "https://openlyst.ink",
             "tintColor": "#dc2626",
             "featuredApps": ["doudou"],
@@ -630,7 +632,7 @@ jobs:
                 "developerName": "OpenLyst Developer",
                 "subtitle": "$SUBTITLE",
                 "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
-                "iconURL": "$IMAGE_BASE_URL/icon.png",
+                "iconURL": "$ICON_URL",
                 "tintColor": "#dc2626",
                 "category": "other",
                 "versions": [
@@ -644,9 +646,9 @@ jobs:
                   }
                 ],
                 "screenshots": [
-                  "$IMAGE_BASE_URL/screenshots/home.png",
-                  "$IMAGE_BASE_URL/screenshots/nowplaying.png",
-                  "$IMAGE_BASE_URL/screenshots/albums.png"
+                  "$SCREENSHOT_BASE_URL/home.png",
+                  "$SCREENSHOT_BASE_URL/nowplaying.png",
+                  "$SCREENSHOT_BASE_URL/albums.png"
                 ]
               }
             ],
@@ -662,7 +664,8 @@ jobs:
           COMMIT=""
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
-          IMAGE_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images"
+          ICON_URL="https://openlyst.ink/favicon.svg"
+          SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
 
           # Determine release type
           if [ "$BUILD_TYPE" == "nightly" ]; then
@@ -692,7 +695,7 @@ jobs:
               "zh": "豆豆是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
               "ru": "Doudou — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
             },
-            "iconURL": "$IMAGE_BASE_URL/icon.png",
+            "iconURL": "$ICON_URL",
             "tintColor": "#dc2626",
             "platforms": [
               "iOS",
@@ -702,9 +705,9 @@ jobs:
               "Android"
             ],
             "screenshots": [
-              "$IMAGE_BASE_URL/screenshots/home.png",
-              "$IMAGE_BASE_URL/screenshots/nowplaying.png",
-              "$IMAGE_BASE_URL/screenshots/albums.png"
+              "$SCREENSHOT_BASE_URL/home.png",
+              "$SCREENSHOT_BASE_URL/nowplaying.png",
+              "$SCREENSHOT_BASE_URL/albums.png"
             ],
             "deprecated": false,
             "versions": [
