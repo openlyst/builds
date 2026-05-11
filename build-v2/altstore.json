@@ -22,8 +22,8 @@
           "version": "19.0.0",
           "buildVersion": "1",
           "date": "2026-05-11",
-          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-11-012852/doudou-19.0.0-2026-05-11-ios-unsigned.ipa",
-          "size": 14221565,
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-11-014902/doudou-19.0.0-2026-05-11-ios-unsigned.ipa",
+          "size": 14221569,
           "localizedDescription": "# Nightly Build 2026-05-11\n\nAutomated nightly build from main branch."
         }
       ],
