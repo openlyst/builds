@@ -733,7 +733,7 @@ jobs:
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           ICON_URL="https://openlyst.ink/favicon.svg"
-          SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
+          DD_SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
 
           # Determine release type
           if [ "$BUILD_TYPE" == "nightly" ]; then
