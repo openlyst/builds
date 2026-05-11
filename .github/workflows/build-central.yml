@@ -615,7 +615,74 @@ jobs:
             SUBTITLE="Music player for self-hosted services"
           fi
 
-          cat > build-v2/altstore.json << EOF
+          # Check if altstore.json already exists
+          if [ -f "build-v2/altstore.json" ]; then
+            # Update existing file - add new version to the app
+            jq --arg version "$VERSION" \
+               --arg date "$DATE" \
+               --arg download_url "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa" \
+               --arg size "$(stat -f%z artifacts/doudou-ios/doudou-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/doudou-ios/doudou-*-ios-unsigned.ipa)" \
+               --arg changelog "$CHANGELOG" \
+               --arg bundle_id "$BUNDLE_ID" \
+               --arg app_name "$APP_NAME" \
+               --arg subtitle "$SUBTITLE" \
+               --arg icon_url "$ICON_URL" \
+               --arg screenshot_base "$DD_SCREENSHOT_BASE_URL" \
+               '
+                .iconURL = $icon_url |
+                .headerURL = "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads" |
+                if (.apps[] | select(.bundleIdentifier == $bundle_id)) == null then
+                  .apps += [{
+                    name: $app_name,
+                    bundleIdentifier: $bundle_id,
+                    developerName: "OpenLyst Developer",
+                    subtitle: $subtitle,
+                    localizedDescription: "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                    iconURL: $icon_url,
+                    tintColor: "#dc2626",
+                    category: "other",
+                    versions: [{
+                      version: $version,
+                      buildVersion: "1",
+                      date: $date,
+                      downloadURL: $download_url,
+                      size: ($size | tonumber),
+                      localizedDescription: $changelog
+                    }],
+                    screenshots: [
+                      "\($screenshot_base)/home.png",
+                      "\($screenshot_base)/nowplaying.png",
+                      "\($screenshot_base)/albums.png"
+                    ]
+                  }]
+                else
+                  .apps |= map(
+                    if .bundleIdentifier == $bundle_id then
+                      .name = $app_name |
+                      .subtitle = $subtitle |
+                      .iconURL = $icon_url |
+                      .screenshots = [
+                        "\($screenshot_base)/home.png",
+                        "\($screenshot_base)/nowplaying.png",
+                        "\($screenshot_base)/albums.png"
+                      ] |
+                      .versions += [{
+                        version: $version,
+                        buildVersion: "1",
+                        date: $date,
+                        downloadURL: $download_url,
+                        size: ($size | tonumber),
+                        localizedDescription: $changelog
+                      }]
+                    else
+                      .
+                    end
+                  )
+                end
+               ' build-v2/altstore.json > build-v2/altstore.json.tmp && mv build-v2/altstore.json.tmp build-v2/altstore.json
+          else
+            # Create new file
+            cat > build-v2/altstore.json << EOF
           {
             "name": "OpenLyst iOS Apps",
             "subtitle": "Free and open source iOS applications",
@@ -655,6 +722,7 @@ jobs:
             "news": []
           }
           EOF
+          fi
 
       - name: Generate apps.json
         run: |
@@ -676,7 +744,80 @@ jobs:
             RELEASE_TYPE="Stable"
           fi
 
-          cat > build-v2/apps.json << EOF
+          # Check if apps.json already exists
+          if [ -f "build-v2/apps.json" ]; then
+            # Update existing file - add new version
+            jq --arg version "$VERSION" \
+               --arg date "$DATE" \
+               --arg tag "$TAG" \
+               --arg release_type "$RELEASE_TYPE" \
+               --arg commit "$COMMIT" \
+               --arg changelog "$CHANGELOG" \
+               --arg icon_url "$ICON_URL" \
+               --arg screenshot_base "$DD_SCREENSHOT_BASE_URL" \
+               '
+                .iconURL = $icon_url |
+                .screenshots = [
+                  "\($screenshot_base)/home.png",
+                  "\($screenshot_base)/nowplaying.png",
+                  "\($screenshot_base)/albums.png"
+                ] |
+                .versions += [{
+                  version: $version,
+                  date: $date,
+                  releaseTag: $tag,
+                  releaseType: $release_type,
+                  sourceCode: "https://gitlab.com/Openlyst/doudou/-/tree/\($commit)",
+                  platforms: ["iOS", "macOS", "Windows", "Linux", "Android"],
+                  platformInstall: {
+                    iOS: "Add the altstore repo https://github.com/openlyst/builds/raw/main/build-v2/altstore.json",
+                    Android: "Download APK from GitHub Releases",
+                    macOS: "Download from GitHub Releases",
+                    Windows: "Download from GitHub Releases",
+                    Linux: "Download from GitHub Releases"
+                  },
+                  downloads: {
+                    iOS: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-ios-unsigned.ipa",
+                    macOS: {
+                      x86_64: "",
+                      arm64: "",
+                      universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-macos-unsigned.zip",
+                      homebrew: ""
+                    },
+                    Windows: {
+                      zip: {
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-windows-x64.zip"
+                      },
+                      installer: {
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-windows-x64-setup.exe"
+                      }
+                    },
+                    Linux: {
+                      zip: {
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-x64.zip"
+                      },
+                      appimage: {
+                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-x86_64.AppImage"
+                      },
+                      deb: {
+                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-amd64.deb"
+                      }
+                    },
+                    Android: {
+                      apk: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date).apk",
+                      aab: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date).aab"
+                    }
+                  },
+                  localizedDescription: {
+                    en: $changelog,
+                    zh: $changelog,
+                    ru: $changelog
+                  }
+                }]
+               ' build-v2/apps.json > build-v2/apps.json.tmp && mv build-v2/apps.json.tmp build-v2/apps.json
+          else
+            # Create new file
+            cat > build-v2/apps.json << EOF
           {
             "bundleIdentifier": "doudou",
             "applicationId": "gitlab.openlyst.doudou",
