@@ -705,9 +705,9 @@ jobs:
               "Android"
             ],
             "screenshots": [
-              "$SCREENSHOT_BASE_URL/home.png",
-              "$SCREENSHOT_BASE_URL/nowplaying.png",
-              "$SCREENSHOT_BASE_URL/albums.png"
+              "$DD_SCREENSHOT_BASE_URL/home.png",
+              "$DD_SCREENSHOT_BASE_URL/nowplaying.png",
+              "$DD_SCREENSHOT_BASE_URL/albums.png"
             ],
             "deprecated": false,
             "versions": [
