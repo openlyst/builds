@@ -666,7 +666,7 @@ jobs:
                         "\($screenshot_base)/nowplaying.png",
                         "\($screenshot_base)/albums.png"
                       ] |
-                      .versions += [{
+                      .versions = .versions + [{
                         version: $version,
                         buildVersion: "1",
                         date: $date,
@@ -762,7 +762,7 @@ jobs:
                   "\($screenshot_base)/nowplaying.png",
                   "\($screenshot_base)/albums.png"
                 ] |
-                .versions += [{
+                .versions = .versions + [{
                   version: $version,
                   date: $date,
                   releaseTag: $tag,
