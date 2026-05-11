@@ -1084,7 +1084,7 @@ jobs:
           if [ "$BUILD_TYPE" == "stable" ]; then
             python build.py --target aur --verbose
           elif [ "$BUILD_TYPE" == "nightly" ]; then
-            python build.py --target aur --nightly-aur-only --verbose
+            python build.py --target aur --unstable-aur-only --verbose
           elif [ "$BUILD_TYPE" == "pre-release" ]; then
             python build.py --target aur --unstable-aur-only --verbose
           else
