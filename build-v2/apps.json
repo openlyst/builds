@@ -35,8 +35,8 @@
     {
       "version": "19.0.0",
       "date": "2026-05-14",
-      "releaseTag": "app-update-2026-05-14-005439",
-      "releaseType": "pre-release",
+      "releaseTag": "app-update-2026-05-14-025859",
+      "releaseType": "nightly",
       "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/",
       "platforms": [
         "iOS",
@@ -53,20 +53,20 @@
         "Linux": "Download from GitHub Releases"
       },
       "downloads": {
-        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-ios-unsigned.ipa",
+        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-ios-unsigned.ipa",
         "macOS": {
           "x86_64": "",
           "arm64": "",
-          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-macos-unsigned.zip",
+          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-macos-unsigned.zip",
           "homebrew": ""
         },
         "Windows": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-windows-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-windows-x64.zip",
             "arm64": ""
           },
           "exe": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-windows-x64-setup.exe",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-windows-x64-setup.exe",
             "arm64": ""
           },
           "msi": {
@@ -87,15 +87,15 @@
         },
         "Linux": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-linux-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-linux-x64.zip",
             "arm64": ""
           },
           "appimage": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-linux-x86_64.AppImage",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-linux-x86_64.AppImage",
             "arm64": ""
           },
           "deb": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14-linux-amd64.deb",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14-linux-amd64.deb",
             "arm64": ""
           },
           "aur": {
@@ -104,14 +104,14 @@
           }
         },
         "Android": {
-          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14.apk",
-          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-005439/doudou-19.0.0-2026-05-14.aab"
+          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14.apk",
+          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-14-025859/doudou-19.0.0-2026-05-14.aab"
         }
       },
       "localizedDescription": {
-        "en": "# 19.0.0\n\n- Settings panels are now scrollable.\n- Adds a new radio mode for YouTube Music\n- Ensure other servers can't affect other servers \n- YouTube Music will show some songs if you have nothing added \n- Fix the desktop bottom bar favorite button not updating when clicked until state refreshed\n- The navbar actions are now centered\n- Switching servers will cancel the current queue\n- Don't show sections with 0 data in the song info panel.\n- Format timestamp for song info.\n- Hide quick action cards if they have 0 data.\n- Fix mini player not updating UI states.",
-        "zh": "# 19.0.0\n\n- Settings panels are now scrollable.\n- Adds a new radio mode for YouTube Music\n- Ensure other servers can't affect other servers \n- YouTube Music will show some songs if you have nothing added \n- Fix the desktop bottom bar favorite button not updating when clicked until state refreshed\n- The navbar actions are now centered\n- Switching servers will cancel the current queue\n- Don't show sections with 0 data in the song info panel.\n- Format timestamp for song info.\n- Hide quick action cards if they have 0 data.\n- Fix mini player not updating UI states.",
-        "ru": "# 19.0.0\n\n- Settings panels are now scrollable.\n- Adds a new radio mode for YouTube Music\n- Ensure other servers can't affect other servers \n- YouTube Music will show some songs if you have nothing added \n- Fix the desktop bottom bar favorite button not updating when clicked until state refreshed\n- The navbar actions are now centered\n- Switching servers will cancel the current queue\n- Don't show sections with 0 data in the song info panel.\n- Format timestamp for song info.\n- Hide quick action cards if they have 0 data.\n- Fix mini player not updating UI states."
+        "en": "# Nightly Build 2026-05-14\n\nAutomated nightly build from main branch.",
+        "zh": "# Nightly Build 2026-05-14\n\nAutomated nightly build from main branch.",
+        "ru": "# Nightly Build 2026-05-14\n\nAutomated nightly build from main branch."
       }
     }
   ]
