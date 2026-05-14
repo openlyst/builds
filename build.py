@@ -1128,16 +1128,29 @@ sha256sums=('SKIP')
             apps_linux = self.client.get_all_apps(platform="Linux")
             for app in apps_linux or []:
                 slug = app.get('slug')
-                if slug and get_latest_linux_zip_from_github(slug, self.client.session):
-                    slugs_for_unstable.add(slug)
+                if slug:
+                    versions = self.client.get_app_versions(slug)
+                    if versions and get_linux_zip_url(versions[0]):
+                        slugs_for_unstable.add(slug)
             for slug in slugs_for_unstable:
-                gh = get_latest_linux_zip_from_github(slug, self.client.session)
-                if not gh:
-                    continue
-                linux_url, pkgver = gh
                 app = self.client.get_app_details(slug)
                 if not app:
                     continue
+                versions = self.client.get_app_versions(slug)
+                if not versions:
+                    continue
+                latest = versions[0]
+                linux_url = get_linux_zip_url(latest)
+                if not linux_url:
+                    continue
+                # Extract pkgver from filename e.g. doudou-19.0.0-2026-05-13-linux-x64.zip -> 19.0.0
+                url_path = urlparse(linux_url).path
+                filename = Path(url_path).name
+                parts = filename.replace(".zip", "").split("-")
+                if len(parts) >= 2:
+                    pkgver = parts[1]
+                else:
+                    pkgver = latest.get('version', '1.0.0')
                 pkgname_unstable = f"{slug}-unstable"
                 content = self.build_pkgbuild_from_url(pkgname_unstable, slug, app, linux_url, pkgver)
                 if content:
