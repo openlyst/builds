@@ -34,8 +34,8 @@
   "versions": [
     {
       "version": "19.0.0",
-      "date": "2026-05-16",
-      "releaseTag": "app-update-2026-05-16-024827",
+      "date": "2026-05-17",
+      "releaseTag": "app-update-2026-05-17-025659",
       "releaseType": "nightly",
       "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/",
       "platforms": [
@@ -53,20 +53,20 @@
         "Linux": "Download from GitHub Releases"
       },
       "downloads": {
-        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-ios-unsigned.ipa",
+        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-ios-unsigned.ipa",
         "macOS": {
           "x86_64": "",
           "arm64": "",
-          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-macos-unsigned.zip",
+          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-macos-unsigned.zip",
           "homebrew": ""
         },
         "Windows": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-windows-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-windows-x64.zip",
             "arm64": ""
           },
           "exe": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-windows-x64-setup.exe",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-windows-x64-setup.exe",
             "arm64": ""
           },
           "msi": {
@@ -87,15 +87,15 @@
         },
         "Linux": {
           "zip": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-linux-x64.zip",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-linux-x64.zip",
             "arm64": ""
           },
           "appimage": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-linux-x86_64.AppImage",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-linux-x86_64.AppImage",
             "arm64": ""
           },
           "deb": {
-            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16-linux-amd64.deb",
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17-linux-amd64.deb",
             "arm64": ""
           },
           "aur": {
@@ -104,14 +104,14 @@
           }
         },
         "Android": {
-          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16.apk",
-          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-16-024827/doudou-19.0.0-2026-05-16.aab"
+          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17.apk",
+          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-05-17-025659/doudou-19.0.0-2026-05-17.aab"
         }
       },
       "localizedDescription": {
-        "en": "# Nightly Build 2026-05-16\n\nAutomated nightly build from main branch.",
-        "zh": "# Nightly Build 2026-05-16\n\nAutomated nightly build from main branch.",
-        "ru": "# Nightly Build 2026-05-16\n\nAutomated nightly build from main branch."
+        "en": "# Nightly Build 2026-05-17\n\nAutomated nightly build from main branch.",
+        "zh": "# Nightly Build 2026-05-17\n\nAutomated nightly build from main branch.",
+        "ru": "# Nightly Build 2026-05-17\n\nAutomated nightly build from main branch."
       }
     }
   ]
