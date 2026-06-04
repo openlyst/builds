@@ -816,7 +816,7 @@ jobs:
           # Check if altstore.json already exists
           if [ -f "build-v2/altstore.json" ]; then
             # Update existing file - add new version to the app
-            SIZE=$(find artifacts/${APP}-ios -name "*.ipa" -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0")
+            SIZE=$(find artifacts/${APP}-ios -name "*.ipa" -type f -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0")
             jq --arg version "$VERSION" \
                --arg date "$DATE" \
                --arg download_url "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa" \
@@ -900,7 +900,7 @@ jobs:
                     "buildVersion": "1",
                     "date": "$DATE",
                     "downloadURL": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa",
-                    "size": $(find artifacts/${APP}-ios -name "*.ipa" -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0"),
+                    "size": $(find artifacts/${APP}-ios -name "*.ipa" -type f -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0"),
                     "localizedDescription": "$CHANGELOG"
                   }
                 ],
