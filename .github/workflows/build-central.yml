@@ -140,18 +140,21 @@ jobs:
             # Extract repo name from URL (e.g., doudou from https://gitlab.com/Openlyst/doudou.git)
             REPO_NAME=$(basename "$REPO_URL" .git)
             URL="https://gitlab.com/Openlyst/${REPO_NAME}/-/raw/main/changelog/${VERSION}.md"
-            RESPONSE=$(curl -s -w "\n%{http_code}" "$URL")
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-            CONTENT=$(echo "$RESPONSE" | head -n-1)
 
-            if [ "$HTTP_CODE" == "200" ]; then
-              # Convert newlines for GitHub Output
-              CHANGELOG=$(echo "$CONTENT" | sed ':a;N;$!ba;s/\n/\\n/g')
+            # Fetch with proper error handling
+            HTTP_CODE=$(curl -s -o /tmp/changelog.txt -w "%{http_code}" "$URL")
+
+            if [ "$HTTP_CODE" == "200" ] && [ -s /tmp/changelog.txt ]; then
+              # File exists and is not empty
+              CHANGELOG=$(cat /tmp/changelog.txt | sed ':a;N;$!ba;s/\n/\\n/g')
               echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
             else
-              CHANGELOG=""
-              echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+              # Fallback to empty changelog if file not found
+              echo "Changelog not found at $URL (HTTP $HTTP_CODE)"
+              echo "changelog=" >> $GITHUB_OUTPUT
             fi
+
+            rm -f /tmp/changelog.txt
           fi
 
       - name: Upload source
