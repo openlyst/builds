@@ -949,8 +949,9 @@ jobs:
 
       - name: Prepare release body
         id: release_body
+        env:
+          CHANGELOG: ${{ needs.setup.outputs.changelog }}
         run: |
-          CHANGELOG="${{ needs.setup.outputs.changelog }}"
           printf '%s' "$CHANGELOG" | sed 's/\\n/\n/g' > release_body.txt
           {
             echo "body<<EOF"
