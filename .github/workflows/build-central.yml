@@ -944,6 +944,17 @@ jobs:
           python3 -m json.tool build-v2/altstore.json > /dev/null
           python3 -m json.tool build-v2/apps.json > /dev/null
 
+      - name: Prepare release body
+        id: release_body
+        run: |
+          CHANGELOG="${{ needs.setup.outputs.changelog }}"
+          printf '%s' "$CHANGELOG" | sed 's/\\n/\n/g' > release_body.txt
+          {
+            echo "body<<EOF"
+            cat release_body.txt
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         id: release
         uses: actions/create-release@v1
@@ -952,7 +963,7 @@ jobs:
         with:
           tag_name: ${{ needs.setup.outputs.release_tag }}
           release_name: Doudou ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
-          body: ${{ needs.setup.outputs.changelog }}
+          body: ${{ steps.release_body.outputs.body }}
           draft: false
           prerelease: ${{ needs.setup.outputs.build_type != 'stable' }}
 
