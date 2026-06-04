@@ -954,9 +954,9 @@ jobs:
         run: |
           printf '%s' "$CHANGELOG" | sed 's/\\n/\n/g' > release_body.txt
           {
-            echo "body<<EOF"
+            echo "body<<__GITHUB_OUTPUT_BODY_DELIMITER__"
             cat release_body.txt
-            echo "EOF"
+            echo "__GITHUB_OUTPUT_BODY_DELIMITER__"
           } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
