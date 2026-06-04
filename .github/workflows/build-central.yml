@@ -948,122 +948,30 @@ jobs:
           python3 -m json.tool build-v2/apps.json > /dev/null
 
       - name: Prepare release body
-        id: release_body
-        env:
-          CHANGELOG: ${{ needs.setup.outputs.changelog }}
         run: |
-          printf '%s' "$CHANGELOG" | sed 's/\\n/\n/g' > release_body.txt
-          {
-            echo "body<<__GITHUB_OUTPUT_BODY_DELIMITER__"
-            cat release_body.txt
-            echo "__GITHUB_OUTPUT_BODY_DELIMITER__"
-          } >> $GITHUB_OUTPUT
+          printf '%s' "${{ needs.setup.outputs.changelog }}" | sed 's/\\n/\n/g' > release_body.txt
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release and upload artifacts
         id: release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.setup.outputs.release_tag }}
-          release_name: Doudou ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
-          body: ${{ steps.release_body.outputs.body }}
+          name: Doudou ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
+          body_path: release_body.txt
           draft: false
           prerelease: ${{ needs.setup.outputs.build_type != 'stable' }}
-
-      - name: Upload iOS IPA to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-ios/${{ needs.build-ios.outputs.artifact_name }}
-          asset_name: ${{ needs.build-ios.outputs.artifact_name }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload APK to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-android/${{ needs.build-android.outputs.apk_name }}
-          asset_name: ${{ needs.build-android.outputs.apk_name }}
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload AAB to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-android/${{ needs.build-android.outputs.aab_name }}
-          asset_name: ${{ needs.build-android.outputs.aab_name }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload Windows ZIP to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-windows/${{ needs.build-windows.outputs.zip_name }}
-          asset_name: ${{ needs.build-windows.outputs.zip_name }}
-          asset_content_type: application/zip
-
-      - name: Upload Windows EXE to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-windows/${{ needs.build-windows.outputs.exe_name }}
-          asset_name: ${{ needs.build-windows.outputs.exe_name }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload Linux ZIP to release
-        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/${{ needs.build-linux.outputs.zip_name }}
-          asset_name: ${{ needs.build-linux.outputs.zip_name }}
-          asset_content_type: application/zip
-
-      - name: Upload Linux AppImage to release
-        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/artifacts/${{ needs.build-linux.outputs.appimage_name }}
-          asset_name: ${{ needs.build-linux.outputs.appimage_name }}
-          asset_content_type: application/vnd.appimage
-
-      - name: Upload Linux DEB to release
-        if: ${{ needs.build-linux.outputs.build_status == 'success' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-linux/artifacts/${{ needs.build-linux.outputs.deb_name }}
-          asset_name: ${{ needs.build-linux.outputs.deb_name }}
-          asset_content_type: application/vnd.debian.binary-package
-
-      - name: Upload macOS ZIP to release
-        if: ${{ needs.build-macos.outputs.build_status == 'success' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./artifacts/doudou-macos/${{ needs.build-macos.outputs.artifact_name }}
-          asset_name: ${{ needs.build-macos.outputs.artifact_name }}
-          asset_content_type: application/zip
+          files: |
+            ./artifacts/doudou-ios/*.ipa
+            ./artifacts/doudou-android/*.apk
+            ./artifacts/doudou-android/*.aab
+            ./artifacts/doudou-windows/*.zip
+            ./artifacts/doudou-windows/*.exe
+            ./artifacts/doudou-linux/*.zip
+            ./artifacts/doudou-linux/artifacts/*.AppImage
+            ./artifacts/doudou-linux/artifacts/*.deb
+            ./artifacts/doudou-macos/*.zip
 
       - name: Upload metadata files
         uses: actions/upload-artifact@v4
