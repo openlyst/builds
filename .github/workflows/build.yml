@@ -1635,21 +1635,36 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.DOUDOU_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.DOUDOU_KEY_ALIAS }}
         run: |
-          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "Setting up release signing..."
-            mkdir -p android/keystore
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
-            cat > android/key.properties << EOF
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyPassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=keystore/upload-keystore.jks
-          EOF
-            echo "signing=release" >> $GITHUB_OUTPUT
-          else
-            echo "signing=debug" >> $GITHUB_OUTPUT
-            echo "⚠️ No keystore configured, using debug signing"
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
           fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          mkdir -p android/keystore android/app/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+          cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
+          KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
+
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
+          cp android/key.properties android/app/key.properties
+          echo "signing=release" >> "$GITHUB_OUTPUT"
+          echo "Release signing is configured"
 
       - name: Validate Android keystore
         if: ${{ steps.signing.outputs.signing == 'release' }}
@@ -1667,10 +1682,6 @@ jobs:
 
           if [[ -f "$STORE_FILE" ]]; then
             KEYSTORE_PATH="$STORE_FILE"
-          elif [[ -f "android/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/$STORE_FILE"
-          elif [[ -f "android/app/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/app/$STORE_FILE"
           else
             echo "❌ Keystore file not found for storeFile=$STORE_FILE"
             exit 1
@@ -1696,10 +1707,42 @@ jobs:
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/flutter-apk/app-release.apk doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
+      - name: Verify APK signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          APK="doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk"
+          echo "Verifying APK signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$APK" >/dev/null 2>&1; then
+              echo "❌ APK is not signed: $APK"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$APK" >/dev/null 2>&1; then
+            echo "❌ APK is not signed: $APK"
+            exit 1
+          fi
+          echo "✅ APK signature verified"
+
       - name: Build AAB
         run: |
           flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/bundle/release/app-release.aab doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Verify AAB signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          AAB="doudou-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab"
+          echo "Verifying AAB signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$AAB" >/dev/null 2>&1; then
+              echo "❌ AAB is not signed: $AAB"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$AAB" >/dev/null 2>&1; then
+            echo "❌ AAB is not signed: $AAB"
+            exit 1
+          fi
+          echo "✅ AAB signature verified"
 
       - name: Record duration and status
         id: duration
@@ -1766,21 +1809,36 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.DOCAN_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.DOCAN_KEY_ALIAS }}
         run: |
-          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "Setting up release signing..."
-            mkdir -p android/keystore
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
-            cat > android/key.properties << EOF
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyPassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=keystore/upload-keystore.jks
-          EOF
-            echo "signing=release" >> $GITHUB_OUTPUT
-          else
-            echo "signing=debug" >> $GITHUB_OUTPUT
-            echo "⚠️ No keystore configured, using debug signing"
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
           fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          mkdir -p android/keystore android/app/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+          cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
+          KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
+
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
+          cp android/key.properties android/app/key.properties
+          echo "signing=release" >> "$GITHUB_OUTPUT"
+          echo "Release signing is configured"
 
       - name: Validate Android keystore
         if: ${{ steps.signing.outputs.signing == 'release' }}
@@ -1798,10 +1856,6 @@ jobs:
 
           if [[ -f "$STORE_FILE" ]]; then
             KEYSTORE_PATH="$STORE_FILE"
-          elif [[ -f "android/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/$STORE_FILE"
-          elif [[ -f "android/app/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/app/$STORE_FILE"
           else
             echo "❌ Keystore file not found for storeFile=$STORE_FILE"
             exit 1
@@ -1827,10 +1881,42 @@ jobs:
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/flutter-apk/app-release.apk docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
+      - name: Verify APK signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          APK="docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk"
+          echo "Verifying APK signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$APK" >/dev/null 2>&1; then
+              echo "❌ APK is not signed: $APK"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$APK" >/dev/null 2>&1; then
+            echo "❌ APK is not signed: $APK"
+            exit 1
+          fi
+          echo "✅ APK signature verified"
+
       - name: Build AAB
         run: |
           flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/bundle/release/app-release.aab docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Verify AAB signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          AAB="docan-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab"
+          echo "Verifying AAB signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$AAB" >/dev/null 2>&1; then
+              echo "❌ AAB is not signed: $AAB"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$AAB" >/dev/null 2>&1; then
+            echo "❌ AAB is not signed: $AAB"
+            exit 1
+          fi
+          echo "✅ AAB signature verified"
 
       - name: Record duration and status
         id: duration
@@ -2225,21 +2311,36 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.REPSTORE_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.REPSTORE_KEY_ALIAS }}
         run: |
-          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "Setting up release signing..."
-            mkdir -p android/keystore
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/upload-keystore.jks
-            cat > android/key.properties << EOF
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyPassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=keystore/upload-keystore.jks
-          EOF
-            echo "signing=release" >> $GITHUB_OUTPUT
-          else
-            echo "signing=debug" >> $GITHUB_OUTPUT
-            echo "⚠️ No keystore configured, using debug signing"
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
           fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          mkdir -p android/keystore android/app/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+          cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
+          KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
+
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
+          cp android/key.properties android/app/key.properties
+          echo "signing=release" >> "$GITHUB_OUTPUT"
+          echo "Release signing is configured"
 
       - name: Validate Android keystore
         if: ${{ steps.signing.outputs.signing == 'release' }}
@@ -2257,10 +2358,6 @@ jobs:
 
           if [[ -f "$STORE_FILE" ]]; then
             KEYSTORE_PATH="$STORE_FILE"
-          elif [[ -f "android/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/$STORE_FILE"
-          elif [[ -f "android/app/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/app/$STORE_FILE"
           else
             echo "❌ Keystore file not found for storeFile=$STORE_FILE"
             exit 1
@@ -2287,10 +2384,42 @@ jobs:
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/flutter-apk/app-release.apk repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
+      - name: Verify APK signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          APK="repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk"
+          echo "Verifying APK signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$APK" >/dev/null 2>&1; then
+              echo "❌ APK is not signed: $APK"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$APK" >/dev/null 2>&1; then
+            echo "❌ APK is not signed: $APK"
+            exit 1
+          fi
+          echo "✅ APK signature verified"
+
       - name: Build AAB
         run: |
           flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/bundle/release/app-release.aab repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Verify AAB signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          AAB="repstore-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab"
+          echo "Verifying AAB signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$AAB" >/dev/null 2>&1; then
+              echo "❌ AAB is not signed: $AAB"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$AAB" >/dev/null 2>&1; then
+            echo "❌ AAB is not signed: $AAB"
+            exit 1
+          fi
+          echo "✅ AAB signature verified"
 
       - name: Record duration and status
         id: duration
@@ -2357,21 +2486,35 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.OPENTORRENT_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.OPENTORRENT_KEY_ALIAS }}
         run: |
-          if [[ -n "$ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "Setting up release signing..."
-            mkdir -p android/app
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-            cat > android/key.properties << EOF
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyPassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=upload-keystore.jks
-          EOF
-            echo "signing=release" >> $GITHUB_OUTPUT
-          else
-            echo "signing=debug" >> $GITHUB_OUTPUT
-            echo "⚠️ No keystore configured, using debug signing"
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
           fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          mkdir -p android/app
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/app/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+          KEYSTORE_ABS_PATH="$PWD/android/app/upload-keystore.jks"
+
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
+          cp android/key.properties android/app/key.properties
+          echo "signing=release" >> "$GITHUB_OUTPUT"
+          echo "Release signing is configured"
 
       - name: Validate Android keystore
         if: ${{ steps.signing.outputs.signing == 'release' }}
@@ -2389,10 +2532,6 @@ jobs:
 
           if [[ -f "$STORE_FILE" ]]; then
             KEYSTORE_PATH="$STORE_FILE"
-          elif [[ -f "android/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/$STORE_FILE"
-          elif [[ -f "android/app/$STORE_FILE" ]]; then
-            KEYSTORE_PATH="android/app/$STORE_FILE"
           else
             echo "❌ Keystore file not found for storeFile=$STORE_FILE"
             exit 1
@@ -2420,10 +2559,42 @@ jobs:
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/flutter-apk/app-release.apk opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
+      - name: Verify APK signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          APK="opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk"
+          echo "Verifying APK signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$APK" >/dev/null 2>&1; then
+              echo "❌ APK is not signed: $APK"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$APK" >/dev/null 2>&1; then
+            echo "❌ APK is not signed: $APK"
+            exit 1
+          fi
+          echo "✅ APK signature verified"
+
       - name: Build AAB
         run: |
           flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
           mv build/app/outputs/bundle/release/app-release.aab opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+
+      - name: Verify AAB signature
+        if: ${{ steps.signing.outputs.signing == 'release' }}
+        run: |
+          AAB="opentorrent-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab"
+          echo "Verifying AAB signature..."
+          if command -v apksigner >/dev/null 2>&1; then
+            if ! apksigner verify "$AAB" >/dev/null 2>&1; then
+              echo "❌ AAB is not signed: $AAB"
+              exit 1
+            fi
+          elif ! jarsigner -verify "$AAB" >/dev/null 2>&1; then
+            echo "❌ AAB is not signed: $AAB"
+            exit 1
+          fi
+          echo "✅ AAB signature verified"
 
       - name: Record duration and status
         id: duration
