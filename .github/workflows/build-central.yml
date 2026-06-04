@@ -833,7 +833,7 @@ jobs:
                     bundleIdentifier: $bundle_id,
                     developerName: "OpenLyst Developer",
                     subtitle: $subtitle,
-                    localizedDescription: "\($app^) is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                    localizedDescription: "\($app_name) is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
                     iconURL: $icon_url,
                     tintColor: "#dc2626",
                     category: "other",
