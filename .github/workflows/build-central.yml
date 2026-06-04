@@ -327,6 +327,81 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android signing for klit
+        id: signing
+        if: ${{ needs.setup.outputs.app_name == 'klit' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.KLIT_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KLIT_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.KLIT_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.KLIT_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "No keystore configured, using debug signing"
+            exit 0
+          fi
+
+          echo "Setting up release signing..."
+          STORE_PASSWORD=$(printf '%s' "$ANDROID_KEYSTORE_PASSWORD" | tr -d '\r')
+          KEY_PASSWORD=$(printf '%s' "$ANDROID_KEY_PASSWORD" | tr -d '\r')
+          KEY_ALIAS=$(printf '%s' "$ANDROID_KEY_ALIAS" | tr -d '\r')
+
+          if [[ -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore secrets are incomplete, using debug signing"
+            exit 0
+          fi
+
+          mkdir -p android/keystore android/app/keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/keystore/upload-keystore.jks 2>/dev/null; then
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore base64 is invalid, using debug signing"
+            exit 0
+          fi
+          cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
+          KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
+          mkdir -p "$HOME/.config/.android"
+          # Some Klit Android configs resolve release signing to the default debug keystore path.
+          # Ensure that path is a valid debug keystore (AndroidDebugKey/android), not a symlink
+          # to the release keystore, to avoid password/alias mismatch during packageRelease.
+          rm -f "$HOME/.config/.android/debug.keystore"
+          if [ ! -f "$HOME/.config/.android/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.config/.android/debug.keystore" \
+              -storepass "$STORE_PASSWORD" \
+              -alias AndroidDebugKey \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 >/dev/null 2>&1
+          fi
+
+          if keytool -importkeystore -noprompt \
+            -srckeystore android/keystore/upload-keystore.jks \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore /tmp/klit-keystore-check.jks \
+            -deststoretype JKS \
+            -deststorepass "$STORE_PASSWORD" \
+            -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
+            rm -f /tmp/klit-keystore-check.jks
+            printf '%s\n' \
+              "storePassword=$STORE_PASSWORD" \
+              "keyPassword=$KEY_PASSWORD" \
+              "keyAlias=$KEY_ALIAS" \
+              "storeFile=$KEYSTORE_ABS_PATH" > android/key.properties
+            echo "signing=release" >> "$GITHUB_OUTPUT"
+            echo "Release signing configured successfully"
+          else
+            echo "signing=debug" >> "$GITHUB_OUTPUT"
+            echo "Keystore validation failed, using debug signing"
+          fi
+
       - name: Build Android
         run: |
           flutter pub get
