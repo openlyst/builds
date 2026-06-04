@@ -204,25 +204,76 @@ jobs:
 
       - name: Build iOS (No Code Signing)
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           flutter pub get
 
-          # Work around terminate_restart Swift compile failure
-          PLUGIN_SWIFT=$(find "$HOME/.pub-cache" -type f -path "*/terminate_restart*/ios/Classes/TerminateRestartPlugin.swift" | head -n 1)
-          if [ -n "$PLUGIN_SWIFT" ] && [ -f "$PLUGIN_SWIFT" ]; then
-            perl -i -pe 's/if let flutterEngine = registrar\.messenger\(\) as\??!? FlutterEngine \{/if true {\n            let flutterEngine = registrar.messenger() as! FlutterEngine/' "$PLUGIN_SWIFT"
+          # Klit-specific fixes
+          if [ "$APP" == "klit" ]; then
+            # workmanager_apple requires iOS 14.0+. Flutter migrations can rewrite iOS files
+            # during build, so enforce this target before and throughout the build step.
+            enforce_ios14() {
+              if [ -f ios/Podfile ]; then
+                if grep -Eq "^[[:space:]]*platform :ios" ios/Podfile; then
+                  sed -E -i '' "s/^[[:space:]]*platform :ios, ['\"][^'\"]+['\"]/platform :ios, '14.0'/" ios/Podfile
+                elif grep -Eq "^[[:space:]]*# platform :ios" ios/Podfile; then
+                  sed -E -i '' "s/^[[:space:]]*# platform :ios, ['\"][^'\"]+['\"]/platform :ios, '14.0'/" ios/Podfile
+                else
+                  printf "platform :ios, '14.0'\n%s" "$(cat ios/Podfile)" > ios/Podfile
+                fi
+              fi
+
+              if [ -f ios/Flutter/AppFrameworkInfo.plist ]; then
+                /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 14.0" ios/Flutter/AppFrameworkInfo.plist >/dev/null 2>&1 || \
+                /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 14.0" ios/Flutter/AppFrameworkInfo.plist >/dev/null 2>&1
+              fi
+
+              if [ -f ios/Runner.xcodeproj/project.pbxproj ]; then
+                sed -E -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]+;/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/g" ios/Runner.xcodeproj/project.pbxproj
+              fi
+            }
+
+            enforce_ios14
+            if [ -f ios/Runner/AppDelegate.swift ]; then
+              # Some Klit revisions import `workmanager`, while newer plugin modules are exposed as
+              # `workmanager_apple`. Make import resilient to either module name.
+              perl -0777 -i -pe 's/^import\\s+workmanager$/#if canImport(workmanager)\\nimport workmanager\\n#elseif canImport(workmanager_apple)\\nimport workmanager_apple\\n#endif/m' ios/Runner/AppDelegate.swift
+              # Newer workmanager_apple versions removed registerTask; map old calls to
+              # the current periodic task registration API.
+              perl -0777 -i -pe 's/WorkmanagerPlugin\\.registerTask\\(withIdentifier:\\s*"([^"]+)"\\)/WorkmanagerPlugin.registerPeriodicTask(withIdentifier: "$1", frequency: nil)/g' ios/Runner/AppDelegate.swift
+            fi
+            (
+              while true; do
+                enforce_ios14
+                sleep 1
+              done
+            ) &
+            ENFORCER_PID=$!
+            set +e
+            flutter build ios --release --no-codesign
+            BUILD_EXIT=$?
+            set -e
+            kill "$ENFORCER_PID" >/dev/null 2>&1 || true
+            wait "$ENFORCER_PID" 2>/dev/null || true
+            exit "$BUILD_EXIT"
+          else
+            # Work around terminate_restart Swift compile failure
+            PLUGIN_SWIFT=$(find "$HOME/.pub-cache" -type f -path "*/terminate_restart*/ios/Classes/TerminateRestartPlugin.swift" | head -n 1)
+            if [ -n "$PLUGIN_SWIFT" ] && [ -f "$PLUGIN_SWIFT" ]; then
+              perl -i -pe 's/if let flutterEngine = registrar\.messenger\(\) as\??!? FlutterEngine \{/if true {\n            let flutterEngine = registrar.messenger() as! FlutterEngine/' "$PLUGIN_SWIFT"
+            fi
+
+            dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
+
+            if [ -f "Makefile" ]; then
+              make ios || true
+            fi
+
+            if [ -f "scripts/build-ios.sh" ]; then
+              bash scripts/build-ios.sh || true
+            fi
+
+            flutter build ios --release --no-codesign
           fi
-
-          dart run flutter_rust_bridge_codegen build-ios --release 2>/dev/null || true
-
-          if [ -f "Makefile" ]; then
-            make ios || true
-          fi
-
-          if [ -f "scripts/build-ios.sh" ]; then
-            bash scripts/build-ios.sh || true
-          fi
-
-          flutter build ios --release --no-codesign
 
       - name: Create unsigned IPA
         run: |
@@ -580,6 +631,13 @@ jobs:
         run: |
           rustup target add x86_64-apple-darwin
           rustup target add aarch64-apple-darwin
+
+      - name: Set macOS deployment target for klit (gal plugin requires 11.0+)
+        if: ${{ needs.setup.outputs.app_name == 'klit' }}
+        run: |
+          if [ -f macos/Podfile ]; then
+            sed -i '' "s/platform :osx, '[^']*'/platform :osx, '11.0'/" macos/Podfile
+          fi
 
       - name: Build macOS
         run: |
