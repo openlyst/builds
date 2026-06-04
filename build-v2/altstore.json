@@ -6,7 +6,9 @@
   "headerURL": "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads",
   "website": "https://openlyst.ink",
   "tintColor": "#dc2626",
-  "featuredApps": ["doudou"],
+  "featuredApps": [
+    "doudou"
+  ],
   "apps": [
     {
       "name": "Doudou Nightly",
@@ -25,6 +27,14 @@
           "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-053608/doudou-19.0.0-2026-06-04-ios-unsigned.ipa",
           "size": 14311215,
           "localizedDescription": "# Nightly Build 2026-06-04\n\nAutomated nightly build from main branch."
+        },
+        {
+          "version": "19.0.0",
+          "buildVersion": "1",
+          "date": "2026-06-04",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-ios-unsigned.ipa",
+          "size": 14311214,
+          "localizedDescription": "# Nightly Build 2026-06-04\\n\\nAutomated nightly build from main branch."
         }
       ],
       "screenshots": [

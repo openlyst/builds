@@ -113,6 +113,64 @@
         "zh": "# Nightly Build 2026-06-04\n\nAutomated nightly build from main branch.",
         "ru": "# Nightly Build 2026-06-04\n\nAutomated nightly build from main branch."
       }
+    },
+    {
+      "version": "19.0.0",
+      "date": "2026-06-04",
+      "releaseTag": "app-update-2026-06-04-064453",
+      "releaseType": "nightly",
+      "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/",
+      "platforms": [
+        "iOS",
+        "macOS",
+        "Windows",
+        "Linux",
+        "Android"
+      ],
+      "platformInstall": {
+        "iOS": "Add the altstore repo https://github.com/openlyst/builds/raw/main/build-v2/altstore.json",
+        "Android": "Download APK from GitHub Releases",
+        "macOS": "Download from GitHub Releases",
+        "Windows": "Download from GitHub Releases",
+        "Linux": "Download from GitHub Releases"
+      },
+      "downloads": {
+        "iOS": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-ios-unsigned.ipa",
+        "macOS": {
+          "x86_64": "",
+          "arm64": "",
+          "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-macos-unsigned.zip",
+          "homebrew": ""
+        },
+        "Windows": {
+          "zip": {
+            "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-windows-x64.zip"
+          },
+          "installer": {
+            "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-windows-x64-setup.exe"
+          }
+        },
+        "Linux": {
+          "zip": {
+            "universal": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-linux-x64.zip"
+          },
+          "appimage": {
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-linux-x86_64.AppImage"
+          },
+          "deb": {
+            "x86_64": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04-linux-amd64.deb"
+          }
+        },
+        "Android": {
+          "apk": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04.apk",
+          "aab": "https://github.com/openlyst/builds/releases/download/app-update-2026-06-04-064453/doudou-19.0.0-2026-06-04.aab"
+        }
+      },
+      "localizedDescription": {
+        "en": "# Nightly Build 2026-06-04\\n\\nAutomated nightly build from main branch.",
+        "zh": "# Nightly Build 2026-06-04\\n\\nAutomated nightly build from main branch.",
+        "ru": "# Nightly Build 2026-06-04\\n\\nAutomated nightly build from main branch."
+      }
     }
   ]
 }
