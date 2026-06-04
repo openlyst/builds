@@ -816,10 +816,11 @@ jobs:
           # Check if altstore.json already exists
           if [ -f "build-v2/altstore.json" ]; then
             # Update existing file - add new version to the app
+            SIZE=$(find artifacts/${APP}-ios -name "*.ipa" -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0")
             jq --arg version "$VERSION" \
                --arg date "$DATE" \
                --arg download_url "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa" \
-               --arg size "$(stat -f%z artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa)" \
+               --arg size "$SIZE" \
                --arg changelog "$CHANGELOG" \
                --arg bundle_id "$BUNDLE_ID" \
                --arg app_name "$APP_NAME" \
@@ -889,7 +890,7 @@ jobs:
                 "bundleIdentifier": "$BUNDLE_ID",
                 "developerName": "OpenLyst Developer",
                 "subtitle": "$SUBTITLE",
-                "localizedDescription": "${APP^} is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                "localizedDescription": "$APP_NAME is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
                 "iconURL": "$ICON_URL",
                 "tintColor": "#dc2626",
                 "category": "other",
@@ -899,7 +900,7 @@ jobs:
                     "buildVersion": "1",
                     "date": "$DATE",
                     "downloadURL": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa",
-                    "size": $(stat -f%z artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa),
+                    "size": $(find artifacts/${APP}-ios -name "*.ipa" -exec stat -c%s {} \; 2>/dev/null | head -1 || echo "0"),
                     "localizedDescription": "$CHANGELOG"
                   }
                 ],
@@ -1016,9 +1017,9 @@ jobs:
             "bundleIdentifier": "$BASE_BUNDLE_ID",
             "applicationId": "gitlab.openlyst.$APP",
             "name": {
-              "en": "${APP^}",
-              "zh": "${APP^}",
-              "ru": "${APP^}"
+              "en": "$APP_NAME",
+              "zh": "$APP_NAME",
+              "ru": "$APP_NAME"
             },
             "subtitle": {
               "en": "Music player for self-hosted services",
@@ -1026,9 +1027,9 @@ jobs:
               "ru": "Музыкальный плеер для самостоятельного хостинга"
             },
             "localizedDescription": {
-              "en": "${APP^} is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
-              "zh": "${APP^}是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
-              "ru": "${APP^} — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
+              "en": "$APP_NAME is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+              "zh": "$APP_NAME是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
+              "ru": "$APP_NAME — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
             },
             "iconURL": "$ICON_URL",
             "tintColor": "#dc2626",
