@@ -5,6 +5,14 @@ on:
     - cron: '0 0 * * *'  # Daily at 00:00 UTC for nightly builds
   workflow_dispatch:
     inputs:
+      app_name:
+        description: 'App to build'
+        required: true
+        type: choice
+        options:
+          - doudou
+          - klit
+        default: 'doudou'
       build_type:
         description: 'Build type'
         required: true
@@ -15,7 +23,7 @@ on:
           - stable
         default: 'nightly'
       commit_hash:
-        description: 'Doudou commit hash (leave empty for latest)'
+        description: 'Commit hash (leave empty for latest)'
         required: false
         type: string
         default: ''
@@ -33,6 +41,12 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
+      app_name: ${{ steps.app_config.outputs.app_name }}
+      repo_url: ${{ steps.app_config.outputs.repo_url }}
+      bundle_id: ${{ steps.app_config.outputs.bundle_id }}
+      icon_url: ${{ steps.app_config.outputs.icon_url }}
+      screenshot_base: ${{ steps.app_config.outputs.screenshot_base }}
+      screenshots: ${{ steps.app_config.outputs.screenshots }}
       version: ${{ steps.version.outputs.version }}
       build_date: ${{ steps.version.outputs.build_date }}
       build_type: ${{ steps.build_type.outputs.build_type }}
@@ -49,13 +63,33 @@ jobs:
             echo "build_type=${{ github.event.inputs.build_type }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set app configuration
+        id: app_config
+        run: |
+          APP="${{ github.event.inputs.app_name || 'doudou' }}"
+          echo "app_name=$APP" >> $GITHUB_OUTPUT
+
+          if [ "$APP" == "doudou" ]; then
+            echo "repo_url=https://gitlab.com/Openlyst/doudou.git" >> $GITHUB_OUTPUT
+            echo "bundle_id=doudou" >> $GITHUB_OUTPUT
+            echo "icon_url=https://openlyst.ink/favicon.svg" >> $GITHUB_OUTPUT
+            echo "screenshot_base=https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots" >> $GITHUB_OUTPUT
+            echo "screenshots=home.png,nowplaying.png,albums.png" >> $GITHUB_OUTPUT
+          elif [ "$APP" == "klit" ]; then
+            echo "repo_url=https://gitlab.com/Openlyst/klit.git" >> $GITHUB_OUTPUT
+            echo "bundle_id=gitlab.openlyst.klit" >> $GITHUB_OUTPUT
+            echo "icon_url=https://gitlab.com/Openlyst/klit/-/raw/main/assets/icon/app/icon.png?ref_type=heads" >> $GITHUB_OUTPUT
+            echo "screenshot_base=https://gitlab.com/Openlyst/klit/-/raw/main/images/screenshots" >> $GITHUB_OUTPUT
+            echo "screenshots=home.png,popular.png,post.png" >> $GITHUB_OUTPUT
+          fi
+
       - name: Clone GitLab Repo
-        run: git clone https://gitlab.com/Openlyst/doudou.git doudou-source
+        run: git clone ${{ steps.app_config.outputs.repo_url }} app-source
 
       - name: Checkout specific commit
         id: commit
         if: ${{ github.event.inputs.commit_hash != '' }}
-        working-directory: doudou-source
+        working-directory: app-source
         run: |
           git checkout ${{ github.event.inputs.commit_hash }}
           echo "hash=${{ github.event.inputs.commit_hash }}" >> $GITHUB_OUTPUT
@@ -63,14 +97,14 @@ jobs:
       - name: Get commit hash
         id: commit_hash
         if: ${{ github.event.inputs.commit_hash == '' }}
-        working-directory: doudou-source
+        working-directory: app-source
         run: |
           HASH=$(git rev-parse HEAD)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Get version from pubspec
         id: version
-        working-directory: doudou-source
+        working-directory: app-source
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
           BUILD_DATE=$(date +%Y-%m-%d)
@@ -92,16 +126,20 @@ jobs:
       - name: Fetch changelog
         id: changelog
         run: |
+          APP="${{ steps.app_config.outputs.app_name }}"
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_TYPE="${{ steps.build_type.outputs.build_type }}"
-          
+
           # For nightly, use a generic message
           if [ "$BUILD_TYPE" == "nightly" ]; then
             CHANGELOG="# Nightly Build ${{ steps.version.outputs.build_date }}\n\nAutomated nightly build from main branch."
             echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
           else
             # Fetch changelog from GitLab
-            URL="https://gitlab.com/Openlyst/doudou/-/raw/main/changelog/${VERSION}.md"
+            REPO_URL="${{ steps.app_config.outputs.repo_url }}"
+            # Extract repo name from URL (e.g., doudou from https://gitlab.com/Openlyst/doudou.git)
+            REPO_NAME=$(basename "$REPO_URL" .git)
+            URL="https://gitlab.com/Openlyst/${REPO_NAME}/-/raw/main/changelog/${VERSION}.md"
             RESPONSE=$(curl -s -w "\n%{http_code}" "$URL")
             HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
             CONTENT=$(echo "$RESPONSE" | head -n-1)
@@ -119,8 +157,8 @@ jobs:
       - name: Upload source
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-source
-          path: doudou-source
+          name: app-source
+          path: app-source
 
   # ============================================================================
   # IOS BUILD
@@ -135,7 +173,7 @@ jobs:
       - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: doudou-source
+          name: app-source
           path: .
 
       - name: Fix RepeatMode conflict with Flutter
@@ -188,26 +226,28 @@ jobs:
 
       - name: Create unsigned IPA
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r doudou-${VERSION}-${DATE}-ios-unsigned.ipa Payload/
+          zip -r ${APP}-${VERSION}-${DATE}-ios-unsigned.ipa Payload/
           rm -rf Payload
 
       - name: Set artifact info
         id: artifact
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
-          echo "name=doudou-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
-          echo "path=doudou-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
+          echo "name=${APP}-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
+          echo "path=${APP}-${VERSION}-${DATE}-ios-unsigned.ipa" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-ios
-          path: doudou-*-ios-unsigned.ipa
+          name: ${{ needs.setup.outputs.app_name }}-ios
+          path: ${{ needs.setup.outputs.app_name }}-*-ios-unsigned.ipa
 
   # ============================================================================
   # ANDROID BUILD
@@ -222,7 +262,7 @@ jobs:
       - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: doudou-source
+          name: app-source
           path: .
 
       - uses: subosito/flutter-action@v2
@@ -245,22 +285,23 @@ jobs:
       - name: Rename artifacts
         id: artifact
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
-          
-          mv build/app/outputs/flutter-apk/app-release.apk doudou-${VERSION}-${DATE}.apk
-          mv build/app/outputs/bundle/release/app-release.aab doudou-${VERSION}-${DATE}.aab
-          
-          echo "apk_name=doudou-${VERSION}-${DATE}.apk" >> $GITHUB_OUTPUT
-          echo "aab_name=doudou-${VERSION}-${DATE}.aab" >> $GITHUB_OUTPUT
+
+          mv build/app/outputs/flutter-apk/app-release.apk ${APP}-${VERSION}-${DATE}.apk
+          mv build/app/outputs/bundle/release/app-release.aab ${APP}-${VERSION}-${DATE}.aab
+
+          echo "apk_name=${APP}-${VERSION}-${DATE}.apk" >> $GITHUB_OUTPUT
+          echo "aab_name=${APP}-${VERSION}-${DATE}.aab" >> $GITHUB_OUTPUT
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-android
+          name: ${{ needs.setup.outputs.app_name }}-android
           path: |
-            doudou-*.apk
-            doudou-*.aab
+            ${{ needs.setup.outputs.app_name }}-*.apk
+            ${{ needs.setup.outputs.app_name }}-*.aab
 
   # ============================================================================
   # WINDOWS BUILD
@@ -276,7 +317,7 @@ jobs:
       - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: doudou-source
+          name: app-source
           path: .
 
       - name: Fix RepeatMode conflict with Flutter
@@ -317,29 +358,31 @@ jobs:
 
       - name: Create ZIP
         run: |
+          $app = "${{ needs.setup.outputs.app_name }}"
           $version = "${{ needs.setup.outputs.version }}"
           $date = "${{ needs.setup.outputs.build_date }}"
-          $filename = "doudou-${version}-${date}-windows-x64.zip"
+          $filename = "${app}-${version}-${date}-windows-x64.zip"
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
 
       - name: Create Inno Setup Script
         run: |
+          $app = "${{ needs.setup.outputs.app_name }}"
           $version = "${{ needs.setup.outputs.version }}"
           $date = "${{ needs.setup.outputs.build_date }}"
           @"
           [Setup]
-          AppName=Doudou
+          AppName=$app
           AppVersion=$version
           AppPublisher=Openlyst
-          DefaultDirName={autopf}\Doudou
-          DefaultGroupName=Doudou
+          DefaultDirName={autopf}\$app
+          DefaultGroupName=$app
           OutputDir=.
-          OutputBaseFilename=doudou-$version-$date-windows-x64-setup
+          OutputBaseFilename=$app-$version-$date-windows-x64-setup
           Compression=lzma2
           SolidCompression=yes
           ArchitecturesInstallIn64BitMode=x64compatible
           WizardStyle=modern
-          UninstallDisplayIcon={app}\doudou.exe
+          UninstallDisplayIcon={app}\$app.exe
           PrivilegesRequired=lowest
 
           [Languages]
@@ -352,12 +395,12 @@ jobs:
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
           [Icons]
-          Name: "{group}\Doudou"; Filename: "{app}\doudou.exe"
-          Name: "{group}\{cm:UninstallProgram,Doudou}"; Filename: "{uninstallexe}"
-          Name: "{autodesktop}\Doudou"; Filename: "{app}\doudou.exe"; Tasks: desktopicon
+          Name: "{group}\$app"; Filename: "{app}\$app.exe"
+          Name: "{group}\{cm:UninstallProgram,$app}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\$app"; Filename: "{app}\$app.exe"; Tasks: desktopicon
 
           [Run]
-          Filename: "{app}\doudou.exe"; Description: "{cm:LaunchProgram,Doudou}"; Flags: nowait postinstall skipifsilent
+          Filename: "{app}\$app.exe"; Description: "{cm:LaunchProgram,$app}"; Flags: nowait postinstall skipifsilent
           "@ | Out-File -FilePath installer.iss -Encoding UTF8
 
       - name: Build Windows Installer
@@ -366,18 +409,19 @@ jobs:
       - name: Set artifact info
         id: artifact
         run: |
+          $app = "${{ needs.setup.outputs.app_name }}"
           $version = "${{ needs.setup.outputs.version }}"
           $date = "${{ needs.setup.outputs.build_date }}"
-          echo "zip_name=doudou-${version}-${date}-windows-x64.zip" >> $env:GITHUB_OUTPUT
-          echo "exe_name=doudou-${version}-${date}-windows-x64-setup.exe" >> $env:GITHUB_OUTPUT
+          echo "zip_name=${app}-${version}-${date}-windows-x64.zip" >> $env:GITHUB_OUTPUT
+          echo "exe_name=${app}-${version}-${date}-windows-x64-setup.exe" >> $env:GITHUB_OUTPUT
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-windows
+          name: ${{ needs.setup.outputs.app_name }}-windows
           path: |
-            doudou-*-windows-x64.zip
-            doudou-*-windows-x64-setup.exe
+            ${{ needs.setup.outputs.app_name }}-*-windows-x64.zip
+            ${{ needs.setup.outputs.app_name }}-*-windows-x64-setup.exe
 
   # ============================================================================
   # LINUX BUILD
@@ -397,7 +441,7 @@ jobs:
       - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: doudou-source
+          name: app-source
           path: .
 
       - name: Fix RepeatMode conflict with Flutter
@@ -438,13 +482,17 @@ jobs:
 
       - name: Create ZIP
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           cd build/linux/x64/release
-          zip -r $GITHUB_WORKSPACE/doudou-${VERSION}-${DATE}-linux-x64.zip bundle/
+          zip -r $GITHUB_WORKSPACE/${APP}-${VERSION}-${DATE}-linux-x64.zip bundle/
 
       - name: Install fastforge and build packages
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
+          VERSION="${{ needs.setup.outputs.version }}"
+          DATE="${{ needs.setup.outputs.build_date }}"
           dart pub global activate fastforge
           export PATH="$PATH:$HOME/.pub-cache/bin"
           export PUB_CACHE="$HOME/.pub-cache"
@@ -460,9 +508,9 @@ jobs:
           $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
 
           echo "=== Copying artifacts ==="
-          find dist -name "*.deb" -exec cp {} artifacts/doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
-          find dist -name "*.rpm" -exec cp {} artifacts/doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-amd64.rpm \; 2>/dev/null || true
-          find dist -name "*.AppImage" -exec cp {} artifacts/doudou-${{ needs.setup.outputs.version }}-${{ needs.setup.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+          find dist -name "*.deb" -exec cp {} artifacts/${APP}-${VERSION}-${DATE}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.rpm" -exec cp {} artifacts/${APP}-${VERSION}-${DATE}-linux-amd64.rpm \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/${APP}-${VERSION}-${DATE}-linux-x86_64.AppImage \; 2>/dev/null || true
 
           echo "=== Final Artifacts ==="
           ls -la artifacts/ || true
@@ -470,11 +518,12 @@ jobs:
       - name: Set artifact info
         id: artifact
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
-          echo "zip_name=doudou-${VERSION}-${DATE}-linux-x64.zip" >> $GITHUB_OUTPUT
-          echo "appimage_name=doudou-${VERSION}-${DATE}-linux-x86_64.AppImage" >> $GITHUB_OUTPUT
-          echo "deb_name=doudou-${VERSION}-${DATE}-linux-amd64.deb" >> $GITHUB_OUTPUT
+          echo "zip_name=${APP}-${VERSION}-${DATE}-linux-x64.zip" >> $GITHUB_OUTPUT
+          echo "appimage_name=${APP}-${VERSION}-${DATE}-linux-x86_64.AppImage" >> $GITHUB_OUTPUT
+          echo "deb_name=${APP}-${VERSION}-${DATE}-linux-amd64.deb" >> $GITHUB_OUTPUT
 
       - name: Set build status
         id: status
@@ -484,9 +533,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-linux
+          name: ${{ needs.setup.outputs.app_name }}-linux
           path: |
-            doudou-*-linux-x64.zip
+            ${{ needs.setup.outputs.app_name }}-*-linux-x64.zip
             artifacts/*.AppImage
             artifacts/*.deb
 
@@ -504,7 +553,7 @@ jobs:
       - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: doudou-source
+          name: app-source
           path: .
 
       - name: Fix RepeatMode conflict with Flutter
@@ -537,11 +586,11 @@ jobs:
           flutter config --enable-macos-desktop
           flutter pub get
           dart run flutter_rust_bridge_codegen build-macos --release 2>/dev/null || true
-          
+
           if [ -f "Makefile" ]; then
             make macos || true
           fi
-          
+
           flutter build macos --release --build-name="${{ needs.setup.outputs.version }}"
         env:
           CODE_SIGNING_ALLOWED: "NO"
@@ -549,17 +598,19 @@ jobs:
 
       - name: Create universal ZIP
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           cd build/macos/Build/Products/Release
-          zip -r $GITHUB_WORKSPACE/doudou-${VERSION}-${DATE}-macos-unsigned.zip *.app
+          zip -r $GITHUB_WORKSPACE/${APP}-${VERSION}-${DATE}-macos-unsigned.zip *.app
 
       - name: Set artifact info
         id: artifact
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
-          echo "name=doudou-${VERSION}-${DATE}-macos-unsigned.zip" >> $GITHUB_OUTPUT
+          echo "name=${APP}-${VERSION}-${DATE}-macos-unsigned.zip" >> $GITHUB_OUTPUT
 
       - name: Set build status
         id: status
@@ -569,8 +620,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: doudou-macos
-          path: doudou-*-macos-unsigned.zip
+          name: ${{ needs.setup.outputs.app_name }}-macos
+          path: ${{ needs.setup.outputs.app_name }}-*-macos-unsigned.zip
 
   # ============================================================================
   # GENERATE METADATA AND RELEASE
@@ -594,43 +645,52 @@ jobs:
 
       - name: Generate altstore.json
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           TAG="${{ needs.setup.outputs.release_tag }}"
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
-          ICON_URL="https://openlyst.ink/favicon.svg"
+          ICON_URL="${{ needs.setup.outputs.icon_url }}"
           HEADER_URL="https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads"
-          DD_SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
+          SCREENSHOT_BASE="${{ needs.setup.outputs.screenshot_base }}"
+          SCREENSHOTS="${{ needs.setup.outputs.screenshots }}"
+          BASE_BUNDLE_ID="${{ needs.setup.outputs.bundle_id }}"
 
           # Determine app name and bundle identifier based on build type
           if [ "$BUILD_TYPE" == "nightly" ]; then
-            APP_NAME="Doudou Nightly"
-            BUNDLE_ID="doudou.nightly"
+            APP_NAME="${APP^} Nightly"
+            BUNDLE_ID="${BASE_BUNDLE_ID}.nightly"
             SUBTITLE="Nightly builds - latest features and bug fixes"
           elif [ "$BUILD_TYPE" == "pre-release" ]; then
-            APP_NAME="Doudou Beta"
-            BUNDLE_ID="doudou.pre"
+            APP_NAME="${APP^} Beta"
+            BUNDLE_ID="${BASE_BUNDLE_ID}.pre"
             SUBTITLE="Pre-release builds - test upcoming features"
           else
-            APP_NAME="Doudou"
-            BUNDLE_ID="doudou"
+            APP_NAME="${APP^}"
+            BUNDLE_ID="${BASE_BUNDLE_ID}"
             SUBTITLE="Music player for self-hosted services"
           fi
+
+          # Build screenshot URLs
+          SCREENSHOT_URLS=$(echo "$SCREENSHOTS" | tr ',' '\n' | while read shot; do
+            echo "${SCREENSHOT_BASE}/${shot}"
+          done | paste -sd ',' -)
 
           # Check if altstore.json already exists
           if [ -f "build-v2/altstore.json" ]; then
             # Update existing file - add new version to the app
             jq --arg version "$VERSION" \
                --arg date "$DATE" \
-               --arg download_url "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa" \
-               --arg size "$(stat -f%z artifacts/doudou-ios/doudou-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/doudou-ios/doudou-*-ios-unsigned.ipa)" \
+               --arg download_url "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa" \
+               --arg size "$(stat -f%z artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa)" \
                --arg changelog "$CHANGELOG" \
                --arg bundle_id "$BUNDLE_ID" \
                --arg app_name "$APP_NAME" \
                --arg subtitle "$SUBTITLE" \
                --arg icon_url "$ICON_URL" \
-               --arg screenshot_base "$DD_SCREENSHOT_BASE_URL" \
+               --arg screenshot_urls "$SCREENSHOT_URLS" \
+               --arg app "$APP" \
                '
                 .iconURL = $icon_url |
                 .headerURL = "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/header.png?ref_type=heads" |
@@ -640,7 +700,7 @@ jobs:
                     bundleIdentifier: $bundle_id,
                     developerName: "OpenLyst Developer",
                     subtitle: $subtitle,
-                    localizedDescription: "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                    localizedDescription: "\($app^) is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
                     iconURL: $icon_url,
                     tintColor: "#dc2626",
                     category: "other",
@@ -652,11 +712,7 @@ jobs:
                       size: ($size | tonumber),
                       localizedDescription: $changelog
                     }],
-                    screenshots: [
-                      "\($screenshot_base)/home.png",
-                      "\($screenshot_base)/nowplaying.png",
-                      "\($screenshot_base)/albums.png"
-                    ]
+                    screenshots: ($screenshot_urls | split(","))
                   }]
                 else
                   .apps |= map(
@@ -664,11 +720,7 @@ jobs:
                       .name = $app_name |
                       .subtitle = $subtitle |
                       .iconURL = $icon_url |
-                      .screenshots = [
-                        "\($screenshot_base)/home.png",
-                        "\($screenshot_base)/nowplaying.png",
-                        "\($screenshot_base)/albums.png"
-                      ] |
+                      .screenshots = ($screenshot_urls | split(",")) |
                       .versions = .versions + [{
                         version: $version,
                         buildVersion: "1",
@@ -694,14 +746,14 @@ jobs:
             "headerURL": "$HEADER_URL",
             "website": "https://openlyst.ink",
             "tintColor": "#dc2626",
-            "featuredApps": ["doudou"],
+            "featuredApps": ["$APP"],
             "apps": [
               {
                 "name": "$APP_NAME",
                 "bundleIdentifier": "$BUNDLE_ID",
                 "developerName": "OpenLyst Developer",
                 "subtitle": "$SUBTITLE",
-                "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+                "localizedDescription": "${APP^} is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
                 "iconURL": "$ICON_URL",
                 "tintColor": "#dc2626",
                 "category": "other",
@@ -710,15 +762,13 @@ jobs:
                     "version": "$VERSION",
                     "buildVersion": "1",
                     "date": "$DATE",
-                    "downloadURL": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa",
-                    "size": $(stat -f%z artifacts/doudou-ios/doudou-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/doudou-ios/doudou-*-ios-unsigned.ipa),
+                    "downloadURL": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa",
+                    "size": $(stat -f%z artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa 2>/dev/null || stat -c%s artifacts/${APP}-ios/${APP}-*-ios-unsigned.ipa),
                     "localizedDescription": "$CHANGELOG"
                   }
                 ],
                 "screenshots": [
-                  "$DD_SCREENSHOT_BASE_URL/home.png",
-                  "$DD_SCREENSHOT_BASE_URL/nowplaying.png",
-                  "$DD_SCREENSHOT_BASE_URL/albums.png"
+                  $(echo "$SCREENSHOT_URLS" | sed 's/,/,\n/g' | sed 's/^/                  "/' | sed 's/$/",/')
                 ]
               }
             ],
@@ -729,14 +779,17 @@ jobs:
 
       - name: Generate apps.json
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           VERSION="${{ needs.setup.outputs.version }}"
           DATE="${{ needs.setup.outputs.build_date }}"
           TAG="${{ needs.setup.outputs.release_tag }}"
           COMMIT=""
           CHANGELOG="${{ needs.setup.outputs.changelog }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
-          ICON_URL="https://openlyst.ink/favicon.svg"
-          DD_SCREENSHOT_BASE_URL="https://gitlab.com/Openlyst/doudou/-/raw/main/images/screenshots"
+          ICON_URL="${{ needs.setup.outputs.icon_url }}"
+          SCREENSHOT_BASE="${{ needs.setup.outputs.screenshot_base }}"
+          SCREENSHOTS="${{ needs.setup.outputs.screenshots }}"
+          BASE_BUNDLE_ID="${{ needs.setup.outputs.bundle_id }}"
 
           # Determine release type
           if [ "$BUILD_TYPE" == "nightly" ]; then
@@ -746,6 +799,11 @@ jobs:
           else
             RELEASE_TYPE="Stable"
           fi
+
+          # Build screenshot URLs
+          SCREENSHOT_URLS=$(echo "$SCREENSHOTS" | tr ',' '\n' | while read shot; do
+            echo "${SCREENSHOT_BASE}/${shot}"
+          done | paste -sd ',' -)
 
           # Check if apps.json already exists
           if [ -f "build-v2/apps.json" ]; then
@@ -757,20 +815,17 @@ jobs:
                --arg commit "$COMMIT" \
                --arg changelog "$CHANGELOG" \
                --arg icon_url "$ICON_URL" \
-               --arg screenshot_base "$DD_SCREENSHOT_BASE_URL" \
+               --arg screenshot_urls "$SCREENSHOT_URLS" \
+               --arg app "$APP" \
                '
                 .iconURL = $icon_url |
-                .screenshots = [
-                  "\($screenshot_base)/home.png",
-                  "\($screenshot_base)/nowplaying.png",
-                  "\($screenshot_base)/albums.png"
-                ] |
+                .screenshots = ($screenshot_urls | split(",")) |
                 .versions = .versions + [{
                   version: $version,
                   date: $date,
                   releaseTag: $tag,
                   releaseType: $release_type,
-                  sourceCode: "https://gitlab.com/Openlyst/doudou/-/tree/\($commit)",
+                  sourceCode: "https://gitlab.com/Openlyst/\($app)/-/tree/\($commit)",
                   platforms: ["iOS", "macOS", "Windows", "Linux", "Android"],
                   platformInstall: {
                     iOS: "Add the altstore repo https://github.com/openlyst/builds/raw/main/build-v2/altstore.json",
@@ -780,35 +835,35 @@ jobs:
                     Linux: "Download from GitHub Releases"
                   },
                   downloads: {
-                    iOS: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-ios-unsigned.ipa",
+                    iOS: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-ios-unsigned.ipa",
                     macOS: {
                       x86_64: "",
                       arm64: "",
-                      universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-macos-unsigned.zip",
+                      universal: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-macos-unsigned.zip",
                       homebrew: ""
                     },
                     Windows: {
                       zip: {
-                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-windows-x64.zip"
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-windows-x64.zip"
                       },
                       installer: {
-                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-windows-x64-setup.exe"
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-windows-x64-setup.exe"
                       }
                     },
                     Linux: {
                       zip: {
-                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-x64.zip"
+                        universal: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-linux-x64.zip"
                       },
                       appimage: {
-                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-x86_64.AppImage"
+                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-linux-x86_64.AppImage"
                       },
                       deb: {
-                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date)-linux-amd64.deb"
+                        x86_64: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date)-linux-amd64.deb"
                       }
                     },
                     Android: {
-                      apk: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date).apk",
-                      aab: "https://github.com/openlyst/builds/releases/download/\($tag)/doudou-\($version)-\($date).aab"
+                      apk: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date).apk",
+                      aab: "https://github.com/openlyst/builds/releases/download/\($tag)/\($app)-\($version)-\($date).aab"
                     }
                   },
                   localizedDescription: {
@@ -822,12 +877,12 @@ jobs:
             # Create new file
             cat > build-v2/apps.json <<EOF
           {
-            "bundleIdentifier": "doudou",
-            "applicationId": "gitlab.openlyst.doudou",
+            "bundleIdentifier": "$BASE_BUNDLE_ID",
+            "applicationId": "gitlab.openlyst.$APP",
             "name": {
-              "en": "Doudou",
-              "zh": "豆豆",
-              "ru": "Doudou"
+              "en": "${APP^}",
+              "zh": "${APP^}",
+              "ru": "${APP^}"
             },
             "subtitle": {
               "en": "Music player for self-hosted services",
@@ -835,9 +890,9 @@ jobs:
               "ru": "Музыкальный плеер для самостоятельного хостинга"
             },
             "localizedDescription": {
-              "en": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
-              "zh": "豆豆是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
-              "ru": "Doudou — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
+              "en": "${APP^} is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
+              "zh": "${APP^}是一款面向自托管音乐库的播放器。连接 Jellyfin、Plex 或 Navidrome，即可从你自己的服务器收听音乐。",
+              "ru": "${APP^} — музыкальный плеер для самохост-коллекций. Подключайте Jellyfin, Plex или Navidrome и слушайте музыку со своих серверов."
             },
             "iconURL": "$ICON_URL",
             "tintColor": "#dc2626",
@@ -849,9 +904,7 @@ jobs:
               "Android"
             ],
             "screenshots": [
-              "$DD_SCREENSHOT_BASE_URL/home.png",
-              "$DD_SCREENSHOT_BASE_URL/nowplaying.png",
-              "$DD_SCREENSHOT_BASE_URL/albums.png"
+              $(echo "$SCREENSHOT_URLS" | sed 's/,/,\n/g' | sed 's/^/              "/' | sed 's/$/",/')
             ],
             "deprecated": false,
             "versions": [
@@ -860,7 +913,7 @@ jobs:
                 "date": "$DATE",
                 "releaseTag": "$TAG",
                 "releaseType": "$RELEASE_TYPE",
-                "sourceCode": "https://gitlab.com/Openlyst/doudou/-/tree/$COMMIT",
+                "sourceCode": "https://gitlab.com/Openlyst/$APP/-/tree/$COMMIT",
                 "platforms": [
                   "iOS",
                   "macOS",
@@ -876,20 +929,20 @@ jobs:
                   "Linux": "Download from GitHub Releases"
                 },
                 "downloads": {
-                  "iOS": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-ios-unsigned.ipa",
+                  "iOS": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-ios-unsigned.ipa",
                   "macOS": {
                     "x86_64": "",
                     "arm64": "",
-                    "universal": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-macos-unsigned.zip",
+                    "universal": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-macos-unsigned.zip",
                     "homebrew": ""
                   },
                   "Windows": {
                     "zip": {
-                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-windows-x64.zip",
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-windows-x64.zip",
                       "arm64": ""
                     },
                     "exe": {
-                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-windows-x64-setup.exe",
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-windows-x64-setup.exe",
                       "arm64": ""
                     },
                     "msi": {
@@ -910,15 +963,15 @@ jobs:
                   },
                   "Linux": {
                     "zip": {
-                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-x64.zip",
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-linux-x64.zip",
                       "arm64": ""
                     },
                     "appimage": {
-                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-x86_64.AppImage",
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-linux-x86_64.AppImage",
                       "arm64": ""
                     },
                     "deb": {
-                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}-linux-amd64.deb",
+                      "x86_64": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}-linux-amd64.deb",
                       "arm64": ""
                     },
                     "aur": {
@@ -927,8 +980,8 @@ jobs:
                     }
                   },
                   "Android": {
-                    "apk": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}.apk",
-                    "aab": "https://github.com/openlyst/builds/releases/download/${TAG}/doudou-${VERSION}-${DATE}.aab"
+                    "apk": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}.apk",
+                    "aab": "https://github.com/openlyst/builds/releases/download/${TAG}/${APP}-${VERSION}-${DATE}.aab"
                   }
                 },
                 "localizedDescription": {
@@ -958,20 +1011,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.setup.outputs.release_tag }}
-          name: Doudou ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
+          name: ${{ needs.setup.outputs.app_name }} ${{ needs.setup.outputs.version }} (${{ needs.setup.outputs.build_date }})
           body_path: release_body.txt
           draft: false
           prerelease: ${{ needs.setup.outputs.build_type != 'stable' }}
           files: |
-            ./artifacts/doudou-ios/*.ipa
-            ./artifacts/doudou-android/*.apk
-            ./artifacts/doudou-android/*.aab
-            ./artifacts/doudou-windows/*.zip
-            ./artifacts/doudou-windows/*.exe
-            ./artifacts/doudou-linux/*.zip
-            ./artifacts/doudou-linux/artifacts/*.AppImage
-            ./artifacts/doudou-linux/artifacts/*.deb
-            ./artifacts/doudou-macos/*.zip
+            ./artifacts/${{ needs.setup.outputs.app_name }}-ios/*.ipa
+            ./artifacts/${{ needs.setup.outputs.app_name }}-android/*.apk
+            ./artifacts/${{ needs.setup.outputs.app_name }}-android/*.aab
+            ./artifacts/${{ needs.setup.outputs.app_name }}-windows/*.zip
+            ./artifacts/${{ needs.setup.outputs.app_name }}-windows/*.exe
+            ./artifacts/${{ needs.setup.outputs.app_name }}-linux/*.zip
+            ./artifacts/${{ needs.setup.outputs.app_name }}-linux/artifacts/*.AppImage
+            ./artifacts/${{ needs.setup.outputs.app_name }}-linux/artifacts/*.deb
+            ./artifacts/${{ needs.setup.outputs.app_name }}-macos/*.zip
 
       - name: Upload metadata files
         uses: actions/upload-artifact@v4
@@ -1003,13 +1056,14 @@ jobs:
 
       - name: Generate AUR PKGBUILDs
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           if [ "$BUILD_TYPE" == "stable" ]; then
-            python build.py --target aur --verbose
+            python build.py --target aur --app "$APP" --verbose
           elif [ "$BUILD_TYPE" == "nightly" ]; then
-            python build.py --target aur --unstable-aur-only --verbose
+            python build.py --target aur --unstable-aur-only --app "$APP" --verbose
           elif [ "$BUILD_TYPE" == "pre-release" ]; then
-            python build.py --target aur --unstable-aur-only --verbose
+            python build.py --target aur --unstable-aur-only --app "$APP" --verbose
           else
             echo "Unknown build type: $BUILD_TYPE"
             exit 0
@@ -1017,13 +1071,14 @@ jobs:
 
       - name: Generate .SRCINFO for AUR packages
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           if [ "$BUILD_TYPE" == "nightly" ]; then
-            PKG_PATTERN="aur-packages/doudou-nightly/"
+            PKG_PATTERN="aur-packages/${APP}-nightly/"
           elif [ "$BUILD_TYPE" == "pre-release" ]; then
-            PKG_PATTERN="aur-packages/doudou-unstable/"
+            PKG_PATTERN="aur-packages/${APP}-unstable/"
           elif [ "$BUILD_TYPE" == "stable" ]; then
-            PKG_PATTERN="aur-packages/doudou-bin/"
+            PKG_PATTERN="aur-packages/${APP}-bin/"
           else
             echo "Unknown build type: $BUILD_TYPE"
             exit 0
@@ -1054,13 +1109,14 @@ jobs:
         env:
           AUR_SSH_KEY_PASSWORD: ${{ secrets.AUR_SSH_KEY_PASSWORD }}
         run: |
+          APP="${{ needs.setup.outputs.app_name }}"
           BUILD_TYPE="${{ needs.setup.outputs.build_type }}"
           if [ "$BUILD_TYPE" == "nightly" ]; then
-            PKG_PATTERN="aur-packages/doudou-nightly/"
+            PKG_PATTERN="aur-packages/${APP}-nightly/"
           elif [ "$BUILD_TYPE" == "pre-release" ]; then
-            PKG_PATTERN="aur-packages/doudou-unstable/"
+            PKG_PATTERN="aur-packages/${APP}-unstable/"
           elif [ "$BUILD_TYPE" == "stable" ]; then
-            PKG_PATTERN="aur-packages/doudou-bin/"
+            PKG_PATTERN="aur-packages/${APP}-bin/"
           else
             echo "Unknown build type: $BUILD_TYPE"
             exit 0
