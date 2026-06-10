@@ -655,8 +655,9 @@ jobs:
 
       - name: Build Windows
         id: build
+        env:
+          _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
         run: |
-          $env:_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS = "1"
           flutter build windows --release 2>&1 | Tee-Object -Variable buildOutput
           $warnings = ($buildOutput | Select-String -Pattern "warning|deprecated" -AllMatches).Matches.Count
           echo "warnings=$warnings" >> $env:GITHUB_OUTPUT
@@ -769,8 +770,9 @@ jobs:
           cache: true
 
       - name: Build Windows
+        env:
+          _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
         run: |
-          $env:_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS = "1"
           flutter pub get
           flutter build windows --release
 
@@ -880,8 +882,9 @@ jobs:
           cache: true
 
       - name: Build Windows
+        env:
+          _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
         run: |
-          $env:_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS = "1"
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
           flutter build windows --release
@@ -992,8 +995,9 @@ jobs:
           cache: true
 
       - name: Build Windows
+        env:
+          _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
         run: |
-          $env:_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS = "1"
           flutter pub get
           flutter build windows --release
 
@@ -1103,8 +1107,9 @@ jobs:
           cache: true
 
       - name: Build Windows
+        env:
+          _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
         run: |
-          $env:_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS = "1"
           flutter pub get
           flutter gen-l10n
           dart run build_runner build --delete-conflicting-outputs
