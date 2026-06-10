@@ -50,19 +50,19 @@ on:
         required: false
         type: string
         default: ''
-      # Klit
-      build_klit:
-        description: 'Build Klit'
+      # Kilt
+      build_kilt:
+        description: 'Build Kilt'
         required: false
         type: boolean
         default: false
-      klit_platforms:
-        description: 'Klit platforms (comma-separated: ios,android,windows,linux,macos)'
+      kilt_platforms:
+        description: 'Kilt platforms (comma-separated: ios,android,windows,linux,macos)'
         required: false
         type: string
         default: 'ios,android,windows,linux,macos'
-      klit_commit_hash:
-        description: 'Klit commit hash (leave empty for latest)'
+      kilt_commit_hash:
+        description: 'Kilt commit hash (leave empty for latest)'
         required: false
         type: string
         default: ''
@@ -396,9 +396,9 @@ jobs:
           name: finar-ios
           path: finar-*-ios-unsigned.ipa
 
-  # IOS - KLIT
-  build-ios-klit:
-    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'ios') }}
+  # IOS - KILT
+  build-ios-kilt:
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'ios') }}
     runs-on: macos-latest
     continue-on-error: true
     outputs:
@@ -415,8 +415,8 @@ jobs:
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
       - name: Checkout specific commit
-        if: ${{ github.event.inputs.klit_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
 
       - uses: subosito/flutter-action@v2
         with:
@@ -459,7 +459,7 @@ jobs:
           flutter pub get
           enforce_ios14
           if [ -f ios/Runner/AppDelegate.swift ]; then
-            # Some Klit revisions import `workmanager`, while newer plugin modules are exposed as
+            # Some Kilt revisions import `workmanager`, while newer plugin modules are exposed as
             # `workmanager_apple`. Make import resilient to either module name.
             perl -0777 -i -pe 's/^import\\s+workmanager$/#if canImport(workmanager)\\nimport workmanager\\n#elseif canImport(workmanager_apple)\\nimport workmanager_apple\\n#endif/m' ios/Runner/AppDelegate.swift
             # Newer workmanager_apple versions removed registerTask; map old calls to
@@ -485,7 +485,7 @@ jobs:
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
+          zip -r kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-ios-unsigned.ipa Payload/
           rm -rf Payload
 
       - name: Record duration and status
@@ -510,8 +510,8 @@ jobs:
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: klit-ios
-          path: klit-*-ios-unsigned.ipa
+          name: kilt-ios
+          path: kilt-*-ios-unsigned.ipa
 
   # IOS - OPENTORRENT
   build-ios-opentorrent:
@@ -954,8 +954,8 @@ jobs:
           path: finar-*-windows-x64-setup.exe
 
   # 4. BUILD WINDOWS - KLIT (x64)
-  build-windows-klit:
-    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'windows') }}
+  build-windows-kilt:
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'windows') }}
     runs-on: windows-latest
     continue-on-error: true
     outputs:
@@ -972,8 +972,8 @@ jobs:
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
       - name: Checkout specific commit
-        if: ${{ github.event.inputs.klit_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
 
       - name: Get version and date
         id: version
@@ -995,25 +995,25 @@ jobs:
 
       - name: ZIP Windows Build
         run: |
-          $filename = "klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
+          $filename = "kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64.zip"
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $filename
 
       - name: Create Inno Setup Script
         run: |
           @"
           [Setup]
-          AppName=Klit
+          AppName=Kilt
           AppVersion=${{ steps.version.outputs.version }}
           AppPublisher=Openlyst
-          DefaultDirName={autopf}\Klit
-          DefaultGroupName=Klit
+          DefaultDirName={autopf}\Kilt
+          DefaultGroupName=Kilt
           OutputDir=.
-          OutputBaseFilename=klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
+          OutputBaseFilename=kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-windows-x64-setup
           Compression=lzma2
           SolidCompression=yes
           ArchitecturesInstallIn64BitMode=x64compatible
           WizardStyle=modern
-          UninstallDisplayIcon={app}\klit.exe
+          UninstallDisplayIcon={app}\kilt.exe
           PrivilegesRequired=lowest
 
           [Languages]
@@ -1026,12 +1026,12 @@ jobs:
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
           [Icons]
-          Name: "{group}\Klit"; Filename: "{app}\klit.exe"
-          Name: "{group}\{cm:UninstallProgram,Klit}"; Filename: "{uninstallexe}"
-          Name: "{autodesktop}\Klit"; Filename: "{app}\klit.exe"; Tasks: desktopicon
+          Name: "{group}\Kilt"; Filename: "{app}\kilt.exe"
+          Name: "{group}\{cm:UninstallProgram,Kilt}"; Filename: "{uninstallexe}"
+          Name: "{autodesktop}\Kilt"; Filename: "{app}\kilt.exe"; Tasks: desktopicon
 
           [Run]
-          Filename: "{app}\klit.exe"; Description: "{cm:LaunchProgram,Klit}"; Flags: nowait postinstall skipifsilent
+          Filename: "{app}\kilt.exe"; Description: "{cm:LaunchProgram,Kilt}"; Flags: nowait postinstall skipifsilent
           "@ | Out-File -FilePath installer.iss -Encoding UTF8
 
       - name: Build Windows Installer
@@ -1054,14 +1054,14 @@ jobs:
       - name: Upload Windows ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: klit-windows-x64-zip
-          path: klit-*-windows-x64.zip
+          name: kilt-windows-x64-zip
+          path: kilt-*-windows-x64.zip
 
       - name: Upload Windows Installer Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: klit-windows-x64-installer
-          path: klit-*-windows-x64-setup.exe
+          name: kilt-windows-x64-installer
+          path: kilt-*-windows-x64-setup.exe
 
   # 5. BUILD WINDOWS - OPENTORRENT (x64)
   build-windows-opentorrent:
@@ -1423,8 +1423,8 @@ jobs:
           path: finar-*-macos-unsigned.zip
 
   # MACOS - KLIT
-  build-macos-klit:
-    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'macos') }}
+  build-macos-kilt:
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'macos') }}
     runs-on: macos-latest
     continue-on-error: true
     outputs:
@@ -1441,8 +1441,8 @@ jobs:
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
       - name: Checkout specific commit
-        if: ${{ github.event.inputs.klit_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1475,7 +1475,7 @@ jobs:
       - name: Create ZIP (unsigned)
         run: |
           cd build/macos/Build/Products/Release
-          zip -r $GITHUB_WORKSPACE/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
+          zip -r $GITHUB_WORKSPACE/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-macos-unsigned.zip *.app
 
       - name: Record duration and status
         id: duration
@@ -1499,8 +1499,8 @@ jobs:
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: klit-macos
-          path: klit-*-macos-unsigned.zip
+          name: kilt-macos
+          path: kilt-*-macos-unsigned.zip
 
   # MACOS - OPENTORRENT
   build-macos-opentorrent:
@@ -2079,8 +2079,8 @@ jobs:
             finar-*.aab
 
   # ANDROID - KLIT
-  build-android-klit:
-    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'android') }}
+  build-android-kilt:
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'android') }}
     runs-on: ubuntu-latest
     continue-on-error: true
     outputs:
@@ -2098,8 +2098,8 @@ jobs:
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
       - name: Checkout specific commit
-        if: ${{ github.event.inputs.klit_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -2148,7 +2148,7 @@ jobs:
           cp android/keystore/upload-keystore.jks android/app/keystore/upload-keystore.jks
           KEYSTORE_ABS_PATH="$PWD/android/keystore/upload-keystore.jks"
           mkdir -p "$HOME/.config/.android"
-          # Some Klit Android configs resolve release signing to the default debug keystore path.
+          # Some Kilt Android configs resolve release signing to the default debug keystore path.
           # Ensure that path is a valid debug keystore (AndroidDebugKey/android), not a symlink
           # to the release keystore, to avoid password/alias mismatch during packageRelease.
           rm -f "$HOME/.config/.android/debug.keystore"
@@ -2169,11 +2169,11 @@ jobs:
             -srcstorepass "$STORE_PASSWORD" \
             -srcalias "$KEY_ALIAS" \
             -srckeypass "$KEY_PASSWORD" \
-            -destkeystore /tmp/klit-keystore-check.jks \
+            -destkeystore /tmp/kilt-keystore-check.jks \
             -deststoretype JKS \
             -deststorepass "$STORE_PASSWORD" \
             -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1; then
-            rm -f /tmp/klit-keystore-check.jks
+            rm -f /tmp/kilt-keystore-check.jks
             printf '%s\n' \
               "storePassword=$STORE_PASSWORD" \
               "keyPassword=$KEY_PASSWORD" \
@@ -2183,7 +2183,7 @@ jobs:
             echo "signing=release" >> "$GITHUB_OUTPUT"
             echo "Release signing is configured"
           else
-            rm -f android/key.properties android/app/key.properties /tmp/klit-keystore-check.jks
+            rm -f android/key.properties android/app/key.properties /tmp/kilt-keystore-check.jks
             echo "signing=debug" >> "$GITHUB_OUTPUT"
             echo "Keystore validation failed, using debug signing"
           fi
@@ -2239,12 +2239,12 @@ jobs:
             perl -0777 -i -pe 's/\n\s*splits\s*\{\n\s*abi\s*\{\n(?:.|\n)*?\n\s*\}\n\s*\}\n/\n/s' android/app/build.gradle
           fi
           flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
-          mv build/app/outputs/flutter-apk/app-release.apk klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
+          mv build/app/outputs/flutter-apk/app-release.apk kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.apk
 
       - name: Build AAB
         run: |
           flutter build appbundle --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ steps.version.outputs.build_number }}
-          mv build/app/outputs/bundle/release/app-release.aab klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
+          mv build/app/outputs/bundle/release/app-release.aab kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}.aab
 
       - name: Record duration and status
         id: duration
@@ -2264,10 +2264,10 @@ jobs:
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: klit-android
+          name: kilt-android
           path: |
-            klit-*.apk
-            klit-*.aab
+            kilt-*.apk
+            kilt-*.aab
 
   # ANDROID - REPSTORE
   build-android-repstore:
@@ -3262,8 +3262,8 @@ jobs:
             artifacts/
 
   # LINUX - KLIT
-  build-linux-klit:
-    if: ${{ github.event.inputs.build_klit == 'true' && contains(github.event.inputs.klit_platforms, 'linux') }}
+  build-linux-kilt:
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'linux') }}
     runs-on: ubuntu-latest
     continue-on-error: true
     env:
@@ -3282,8 +3282,8 @@ jobs:
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
       - name: Checkout specific commit
-        if: ${{ github.event.inputs.klit_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.klit_commit_hash }}
+        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
 
       - name: Install Linux dependencies
         run: |
@@ -3324,7 +3324,7 @@ jobs:
       - name: Create ZIP
         run: |
           cd build/linux/x64/release
-          zip -r $GITHUB_WORKSPACE/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
+          zip -r $GITHUB_WORKSPACE/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x64.zip bundle/
 
       - name: Install fastforge and build packages
         run: |
@@ -3358,9 +3358,9 @@ jobs:
           find . -name "*.deb" -type f 2>/dev/null
           find . -name "*.rpm" -type f 2>/dev/null
           find . -name "*.AppImage" -type f 2>/dev/null
-          find dist -name "*.deb" -exec cp {} artifacts/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
-          find dist -name "*.rpm" -exec cp {} artifacts/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.rpm \; 2>/dev/null || true
-          find dist -name "*.AppImage" -exec cp {} artifacts/klit-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
+          find dist -name "*.deb" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.deb \; 2>/dev/null || true
+          find dist -name "*.rpm" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-amd64.rpm \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-x86_64.AppImage \; 2>/dev/null || true
 
           # List what we have
           echo "=== Final Artifacts ==="
@@ -3385,9 +3385,9 @@ jobs:
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: klit-linux
+          name: kilt-linux
           path: |
-            klit-*-linux-x64.zip
+            kilt-*-linux-x64.zip
             artifacts/
 
   # LINUX - OPENTORRENT
@@ -3814,28 +3814,28 @@ jobs:
       - build-ios-doudou
       - build-ios-docan
       - build-ios-finar
-      - build-ios-klit
+      - build-ios-kilt
       - build-ios-opentorrent
       - build-windows-doudou
       - build-windows-docan
       - build-windows-finar
-      - build-windows-klit
+      - build-windows-kilt
       - build-windows-opentorrent
       - build-macos-doudou
       - build-macos-docan
       - build-macos-finar
-      - build-macos-klit
+      - build-macos-kilt
       - build-macos-opentorrent
       - build-android-doudou
       - build-android-docan
       - build-android-finar
-      - build-android-klit
+      - build-android-kilt
       - build-android-repstore
       - build-android-opentorrent
       - build-linux-doudou
       - build-linux-docan
       - build-linux-finar
-      - build-linux-klit
+      - build-linux-kilt
       - build-linux-opentorrent
       - build-web-docan
       - build-web-finar
@@ -3905,7 +3905,7 @@ jobs:
               "doudou": ${{ github.event.inputs.build_doudou }},
               "docan": ${{ github.event.inputs.build_docan }},
               "finar": ${{ github.event.inputs.build_finar }},
-              "klit": ${{ github.event.inputs.build_klit }},
+              "kilt": ${{ github.event.inputs.build_kilt }},
               "repstore": ${{ github.event.inputs.build_repstore }},
               "opentorrent": ${{ github.event.inputs.build_opentorrent }},
               "lystcode": ${{ github.event.inputs.build_lystcode }}
@@ -3947,7 +3947,7 @@ jobs:
               doudou-*) project="doudou" ;;
               docan-*) project="docan" ;;
               finar-*) project="finar" ;;
-              klit-*) project="klit" ;;
+              kilt-*) project="kilt" ;;
               repstore-*) project="repstore" ;;
               opentorrent-*) project="opentorrent" ;;
               Lystcode-*) project="lystcode" ;;
@@ -4080,15 +4080,15 @@ jobs:
             echo "" >> release_notes.md
           fi
 
-          # Klit
-          if [ "${{ github.event.inputs.build_klit }}" == "true" ]; then
-            echo "### Klit" >> release_notes.md
-            echo "- Version: ${{ needs.build-android-klit.outputs.version || needs.build-windows-klit.outputs.version || 'N/A' }}" >> release_notes.md
-            echo "- Windows: ${{ needs.build-windows-klit.outputs.status || 'skipped' }} ${{ needs.build-windows-klit.outputs.duration && format('({0} min)', needs.build-windows-klit.outputs.duration) || '' }}" >> release_notes.md
-            echo "- macOS: ${{ needs.build-macos-klit.outputs.status || 'skipped' }} ${{ needs.build-macos-klit.outputs.duration && format('({0} min)', needs.build-macos-klit.outputs.duration) || '' }} (unsigned)" >> release_notes.md
-            echo "- iOS: ${{ needs.build-ios-klit.outputs.status || 'skipped' }} ${{ needs.build-ios-klit.outputs.duration && format('({0} min)', needs.build-ios-klit.outputs.duration) || '' }} (unsigned)" >> release_notes.md
-            echo "- Android: ${{ needs.build-android-klit.outputs.status || 'skipped' }} ${{ needs.build-android-klit.outputs.duration && format('({0} min)', needs.build-android-klit.outputs.duration) || '' }} - Signing: ${{ needs.build-android-klit.outputs.signing || 'N/A' }}" >> release_notes.md
-            echo "- Linux: ${{ needs.build-linux-klit.outputs.status || 'skipped' }} ${{ needs.build-linux-klit.outputs.duration && format('({0} min)', needs.build-linux-klit.outputs.duration) || '' }}" >> release_notes.md
+          # Kilt
+          if [ "${{ github.event.inputs.build_kilt }}" == "true" ]; then
+            echo "### Kilt" >> release_notes.md
+            echo "- Version: ${{ needs.build-android-kilt.outputs.version || needs.build-windows-kilt.outputs.version || 'N/A' }}" >> release_notes.md
+            echo "- Windows: ${{ needs.build-windows-kilt.outputs.status || 'skipped' }} ${{ needs.build-windows-kilt.outputs.duration && format('({0} min)', needs.build-windows-kilt.outputs.duration) || '' }}" >> release_notes.md
+            echo "- macOS: ${{ needs.build-macos-kilt.outputs.status || 'skipped' }} ${{ needs.build-macos-kilt.outputs.duration && format('({0} min)', needs.build-macos-kilt.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- iOS: ${{ needs.build-ios-kilt.outputs.status || 'skipped' }} ${{ needs.build-ios-kilt.outputs.duration && format('({0} min)', needs.build-ios-kilt.outputs.duration) || '' }} (unsigned)" >> release_notes.md
+            echo "- Android: ${{ needs.build-android-kilt.outputs.status || 'skipped' }} ${{ needs.build-android-kilt.outputs.duration && format('({0} min)', needs.build-android-kilt.outputs.duration) || '' }} - Signing: ${{ needs.build-android-kilt.outputs.signing || 'N/A' }}" >> release_notes.md
+            echo "- Linux: ${{ needs.build-linux-kilt.outputs.status || 'skipped' }} ${{ needs.build-linux-kilt.outputs.duration && format('({0} min)', needs.build-linux-kilt.outputs.duration) || '' }}" >> release_notes.md
             echo "" >> release_notes.md
           fi
 
@@ -4135,27 +4135,27 @@ jobs:
           if [ "${{ needs.build-ios-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-iOS"; fi
           if [ "${{ needs.build-ios-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-iOS"; fi
           if [ "${{ needs.build-ios-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-iOS"; fi
-          if [ "${{ needs.build-ios-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-iOS"; fi
+          if [ "${{ needs.build-ios-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-iOS"; fi
           if [ "${{ needs.build-ios-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-iOS"; fi
           if [ "${{ needs.build-windows-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Windows"; fi
           if [ "${{ needs.build-windows-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Windows"; fi
           if [ "${{ needs.build-windows-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Windows"; fi
-          if [ "${{ needs.build-windows-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Windows"; fi
+          if [ "${{ needs.build-windows-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-Windows"; fi
           if [ "${{ needs.build-windows-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Windows"; fi
           if [ "${{ needs.build-macos-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-macOS"; fi
           if [ "${{ needs.build-macos-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-macOS"; fi
           if [ "${{ needs.build-macos-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-macOS"; fi
-          if [ "${{ needs.build-macos-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-macOS"; fi
+          if [ "${{ needs.build-macos-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-macOS"; fi
           if [ "${{ needs.build-macos-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-macOS"; fi
           if [ "${{ needs.build-android-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Android"; fi
           if [ "${{ needs.build-android-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Android"; fi
           if [ "${{ needs.build-android-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Android"; fi
-          if [ "${{ needs.build-android-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Android"; fi
+          if [ "${{ needs.build-android-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-Android"; fi
           if [ "${{ needs.build-android-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Android"; fi
           if [ "${{ needs.build-linux-doudou.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Doudou-Linux"; fi
           if [ "${{ needs.build-linux-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Linux"; fi
           if [ "${{ needs.build-linux-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Linux"; fi
-          if [ "${{ needs.build-linux-klit.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Klit-Linux"; fi
+          if [ "${{ needs.build-linux-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-Linux"; fi
           if [ "${{ needs.build-linux-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Linux"; fi
           if [ "${{ needs.build-web-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Web"; fi
           if [ "${{ needs.build-web-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Web"; fi
@@ -4175,7 +4175,7 @@ jobs:
           if [ "${{ needs.build-android-doudou.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Doudou"; fi
           if [ "${{ needs.build-android-docan.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Docan"; fi
           if [ "${{ needs.build-android-finar.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Finar"; fi
-          if [ "${{ needs.build-android-klit.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Klit"; fi
+          if [ "${{ needs.build-android-kilt.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Kilt"; fi
           if [ "${{ needs.build-android-repstore.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED Repstore"; fi
           if [ "${{ needs.build-android-opentorrent.outputs.signing }}" == "debug" ]; then DEBUG_SIGNED="$DEBUG_SIGNED OpenTorrent"; fi
 
