@@ -1784,7 +1784,7 @@ jobs:
 
   # ANDROID - DOUDOU PLAY STORE
   build-android-doudou-playstore:
-    if: ${{ github.event.inputs.build_doudou_playstore == 'true' }}
+    if: ${{ github.event.inputs.build_doudou_playstore == 'true' || (github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'android')) }}
     runs-on: ubuntu-latest
     continue-on-error: true
     outputs:
