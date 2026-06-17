@@ -8,9 +8,8 @@
   "tintColor": "#dc2626",
   "featuredApps": [
     "doudou",
-    "docan",
     "finar",
-    "klit"
+    "kilt"
   ],
   "apps": [
     {
@@ -20,16 +19,48 @@
       "subtitle": "Music player for self-hosted services",
       "localizedDescription": "Doudou is a music player for self-hosted libraries. Connect Jellyfin, Plex, or Navidrome and listen from your own servers.",
       "iconURL": "https://gitlab.com/Openlyst/doudou/-/raw/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png?ref_type=heads",
-      "tintColor": "#dc2626",
+      "tintColor": "#8b5cf6",
       "category": "other",
       "versions": [
+        {
+          "version": "19.0.0",
+          "buildVersion": "1",
+          "date": "2026-06-04",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-99/doudou-19.0.0-2026-06-04-ios-unsigned.ipa",
+          "size": 14311212,
+          "localizedDescription": "# 19.0.0\n\n- Settings panels are now scrollable.\n- Adds a new radio mode for YouTube Music\n- Ensure other servers can't affect other servers \n- YouTube Music will show some songs if you have nothing added \n- Fix the desktop bottom bar favorite button not updating when clicked until state refreshed\n- The navbar actions are now centered\n- Switching servers will cancel the current queue\n- Don't show sections with 0 data in the song info panel.\n- Format timestamp for song info.\n- Hide quick action cards if they have 0 data.\n- Fix mini player not updating UI states.\n- Show the time stamps in the desktop player.\n- Detailed artist view will scroll with the user content\n- Fix library songs/artists/downloads tabs appearing empty when using non-English locale.\n- Fix queue crashes when switching servers with an empty or single-item queue.\n- Dont show the username on the top with the back button."
+        },
+        {
+          "version": "18.0.0",
+          "buildVersion": "1",
+          "date": "2026-05-08",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-95/doudou-18.0.0-2026-05-08-ios-unsigned.ipa",
+          "size": 14211548,
+          "localizedDescription": "# 18.0.0\n\n# Added\n- Linux build failed in this release"
+        },
+        {
+          "version": "17.0.0",
+          "buildVersion": "1",
+          "date": "2026-05-06",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-93/doudou-17.0.0-2026-05-06-ios-unsigned.ipa",
+          "size": 14210150,
+          "localizedDescription": "# 17.0.0\n- Fix macOS YouTube Music playback\n- Set a smaller default window size for macOS\n- Fix add to playlist window not matching the theme of the app"
+        },
+        {
+          "version": "16.2.0",
+          "buildVersion": "1",
+          "date": "2026-03-14",
+          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-73/doudou-16.2.0-2026-03-14-ios-unsigned.ipa",
+          "size": 14210667,
+          "localizedDescription": "# 16.2.0\n- Navbar design tweaks\n- Page loading improved by up to 50%\n- New page transition animations\n- Fixed back button on settings subpages\n- Search bar now supports themes\n- Fixed downloads screen\n- Fixed songs and artists pages loading\n- Premade playlists now respond to themes\n- Custom art span support"
+        },
         {
           "version": "16.1.0",
           "buildVersion": "1",
           "date": "2026-03-11",
           "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-71/doudou-16.1.0-2026-03-11-ios-unsigned.ipa",
           "size": 14197696,
-          "localizedDescription": "# 16.1.0\n- en_AU patches\n- Fix album art animations\n- Fix animations not being smooth\n- Removed GetX"
+          "localizedDescription": "# 16.1.0\n- Australian English patches\n- Fixed album art animations\n- Fixed animation smoothness\n- Removed GetX"
         },
         {
           "version": "16.0.0",
@@ -37,7 +68,7 @@
           "date": "2026-03-09",
           "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-68/doudou-16.0.0-2026-03-09-ios-unsigned.ipa",
           "size": 14149902,
-          "localizedDescription": "# 16.0.0\n\n- Brand new app\n- Everything has been rewritten to just work. We are done with bugs and unimplamented features"
+          "localizedDescription": "# 16.0.0\n\n- Complete app rewrite\n- Fixed bugs and finished missing features"
         },
         {
           "version": "15.0.0",
@@ -73,34 +104,9 @@
         }
       ],
       "screenshots": [
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/home.PNG?ref_type=heads",
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/nowplaying.PNG?ref_type=heads",
-        "https://gitlab.com/Openlyst/repos/altstore/-/raw/main/photos/doudou/7.0.0/albums.PNG?ref_type=heads"
-      ]
-    },
-    {
-      "name": "Docan",
-      "bundleIdentifier": "docan",
-      "developerName": "OpenLyst Developer",
-      "subtitle": "AI chat app with Liquid Glass UI",
-      "localizedDescription": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
-      "iconURL": "https://gitlab.com/Openlyst/docan/-/raw/main/assets/icon_1024.png",
-      "tintColor": "#6366f1",
-      "category": "other",
-      "versions": [
-        {
-          "version": "3.0.0",
-          "buildVersion": "1",
-          "date": "2026-01-11",
-          "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-4/docan-3.0.0-2026-02-08-ios-unsigned.ipa",
-          "size": 27,
-          "localizedDescription": "# 3.0.0\n\n## New Features\n\n### AI Providers\n- Added DeepSeek AI support with `deepseek-chat` and `deepseek-reasoner` models.\n- Added LM Studio support with OpenAI-compatible API.\n- Dynamic model fetching from API.\n\n### Image Creator\n- Added dedicated Image Creator screen for generating images with AI.\n- Supports Gemini and OpenAI DALL-E providers.\n\n### Playbooks\n- Added Playbooks: User-created YAML integrations for extending Docan.\n- Create custom API integrations with a simple YAML SDK.\n\n### Attachments & Drag-and-Drop\n- Added support for attachments in chat.\n- Drag and drop files directly onto the app."
-        }
-      ],
-      "screenshots": [
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/chat.png?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/chats.png?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Docan/providers.png?ref_type=heads"
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/home.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/albums.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/doudou/-/raw/main/images/nowplaying.png?ref_type=heads"
       ]
     },
     {
@@ -108,11 +114,27 @@
       "bundleIdentifier": "finar",
       "developerName": "OpenLyst Developer",
       "subtitle": "Jellyfin frontend client",
-      "localizedDescription": "Finar is a cross-platform Jellyfin client built with Flutter. It includes native playback with media_kit, offline support with Hive, and an adaptive interface for desktop, mobile, and TV.",
-      "iconURL": "https://gitlab.com/Openlyst/finar/-/raw/main/icon.svg?ref_type=heads",
+      "localizedDescription": "A modern Jellyfin client for all your devices.",
+      "iconURL": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Finar/finar.png?ref_type=heads",
       "tintColor": "#6366f1",
       "category": "other",
       "versions": [
+        {
+          "version": "4.1.1",
+          "buildVersion": "1",
+          "date": "2026-05-07",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-94/finar-4.1.1-2026-05-07-ios-unsigned.ipa",
+          "size": 15713125,
+          "localizedDescription": "# 4.1.1\n\n# Fixed\n- Fixed build issues for macOS"
+        },
+        {
+          "version": "4.1.0",
+          "buildVersion": "1",
+          "date": "2026-04-30",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-92/finar-4.1.0-2026-04-30-ios-unsigned.ipa",
+          "size": 15713124,
+          "localizedDescription": "# 4.1.0\n\n# Added\n- Poster shows a watched icon if a movie or thing was already watched\n\n# Changed\n- Updated description\n\n# Fixed\n\n# Removed\n- Removed features from login page\n- Removed PiP mode"
+        },
         {
           "version": "3.0.0",
           "buildVersion": "1",
@@ -137,25 +159,53 @@
           "size": 27,
           "localizedDescription": "# 1.1.0\n\n## Fixed\n- Fixed controller input in SteamOS"
         }
+      ],
+      "screenshots": [
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Finar/screen-0.jpg?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Finar/screen-1.jpg?ref_type=heads"
       ]
     },
     {
-      "name": "Klit",
-      "bundleIdentifier": "klit",
+      "name": "Kilt",
+      "bundleIdentifier": "kilt",
       "developerName": "OpenLyst Developer",
       "subtitle": "E926 API client",
-      "localizedDescription": "Klit is the successor to BaoBao, built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
-      "iconURL": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/icon.png?ref_type=heads",
-      "tintColor": "#ff6b35",
+      "localizedDescription": "Built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
+      "iconURL": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Kilt/icon.png?ref_type=heads",
+      "tintColor": "#f43f5e",
       "category": "other",
       "versions": [
+        {
+          "version": "10.1.2",
+          "buildVersion": "1",
+          "date": "2026-06-11",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-110/kilt-10.1.2-2026-06-11-ios-unsigned.ipa",
+          "size": 21560563,
+          "localizedDescription": "# 10.1.2\n\n- Renames the application to not sound like a bad word in English and updates the app id"
+        },
+        {
+          "version": "10.1.0",
+          "buildVersion": "1",
+          "date": "2026-06-09",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-102/klit-10.1.0-2026-06-09-ios-unsigned.ipa",
+          "size": 21557577,
+          "localizedDescription": "# 10.1.0\n\n- App is being renamed from Klit to Kilt in English because the old name sounds like an inappropriate word\n- Migrated to e621 Post API v2\n- Updated post response parsing for new JSON structure (files, stats, flags, has, relationships)\n- Added support for new fields: uploader_name, change_seq, approver_id, locked_tags\n- Tags are now returned as flat array (grouped as 'general' for compatibility)\n- Removed unwrapRailsArray from post endpoints (v2 returns arrays directly)"
+        },
+        {
+          "version": "9.0.1",
+          "buildVersion": "1",
+          "date": "2026-04-12",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-90/klit-9.0.1-2026-04-12-ios-unsigned.ipa",
+          "size": 21699343,
+          "localizedDescription": "# 9.0.1\n\n- Fix macos network"
+        },
         {
           "version": "9.0.0",
           "buildVersion": "1",
           "date": "2026-03-09",
           "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-68/klit-9.0.0-2026-03-09-ios-unsigned.ipa",
           "size": 21385872,
-          "localizedDescription": "# 9.0.0\n\n- Brand new codebase"
+          "localizedDescription": "# 9.0.0\n\n- Complete codebase rewrite"
         },
         {
           "version": "8.1.0",
@@ -171,7 +221,7 @@
           "date": "2026-02-27",
           "downloadURL": "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-21/klit-8.0.1-2026-02-27-ios-unsigned.ipa",
           "size": 15348206,
-          "localizedDescription": "# 8.0.1\n\n- top bar refactor"
+          "localizedDescription": "# 8.0.1\n\n- Top bar redesigned"
         },
         {
           "version": "8.0.0",
@@ -198,9 +248,9 @@
         }
       },
       "screenshots": [
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/home.png?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/popular.png?ref_type=heads",
-        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/post.png?ref_type=heads"
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Kilt/home.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Kilt/popular.png?ref_type=heads",
+        "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Kilt/post.png?ref_type=heads"
       ]
     }
   ],

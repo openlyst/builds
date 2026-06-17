@@ -4,7 +4,7 @@
     "description": "Free and open source Android applications from OpenLyst",
     "icon": "icon.png",
     "address": "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo",
-    "timestamp": 1773358855135,
+    "timestamp": 1781727143625,
     "version": 21
   },
   "requests": {
@@ -23,50 +23,36 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773358855135,
-      "lastUpdated": 1773358855135
-    },
-    {
-      "packageName": "docan",
-      "name": "Docan",
-      "summary": "AI chat app with Liquid Glass UI",
-      "icon": "https://gitlab.com/Openlyst/docan/-/raw/main/assets/icon_1024.png",
-      "description": "Docan is a cross-platform AI chat app. Connect multiple providers and keep conversations in one interface across desktop, mobile, and web.",
-      "license": "Unknown",
-      "categories": [
-        "System"
-      ],
-      "webSite": "https://openlyst.ink",
-      "added": 1773358855135,
-      "lastUpdated": 1773358855135
+      "added": 1781727143625,
+      "lastUpdated": 1781727143625
     },
     {
       "packageName": "finar",
       "name": "Finar",
       "summary": "Jellyfin frontend client",
-      "icon": "https://gitlab.com/Openlyst/finar/-/raw/main/icon.svg?ref_type=heads",
-      "description": "Finar is a cross-platform Jellyfin client built with Flutter. It includes native playback with media_kit, offline support with Hive, and an adaptive interface for desktop, mobile, and TV.",
+      "icon": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Finar/finar.png?ref_type=heads",
+      "description": "A modern Jellyfin client for all your devices.",
       "license": "Unknown",
       "categories": [
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773358855135,
-      "lastUpdated": 1773358855135
+      "added": 1781727143625,
+      "lastUpdated": 1781727143625
     },
     {
-      "packageName": "klit",
-      "name": "Klit",
+      "packageName": "kilt",
+      "name": "Kilt",
       "summary": "E926 API client",
-      "icon": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Klit/icon.png?ref_type=heads",
-      "description": "Klit is the successor to BaoBao, built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
+      "icon": "https://gitlab.com/Openlyst/openlyst/-/raw/main/static/icons/Kilt/icon.png?ref_type=heads",
+      "description": "Built for the e621 community with privacy-focused defaults and a fast browsing workflow.",
       "license": "Unknown",
       "categories": [
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773358855135,
-      "lastUpdated": 1773358855135
+      "added": 1781727143625,
+      "lastUpdated": 1781727143625
     },
     {
       "packageName": "repstore",
@@ -79,14 +65,62 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1773358855135,
-      "lastUpdated": 1773358855135
+      "added": 1781727143625,
+      "lastUpdated": 1781727143625
     }
   ],
   "packages": {
     "doudou": [
       {
-        "added": 1773358850683,
+        "added": 1781727138775,
+        "apkName": "doudou-19.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "doudou",
+        "size": 85206615,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "19.0.0"
+      },
+      {
+        "added": 1781727139035,
+        "apkName": "doudou-18.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "doudou",
+        "size": 83720570,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "18.0.0"
+      },
+      {
+        "added": 1781727139319,
+        "apkName": "doudou-17.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "doudou",
+        "size": 83736774,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "17.0.0"
+      },
+      {
+        "added": 1781727139580,
+        "apkName": "doudou-16.2.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "doudou",
+        "size": 83736146,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "16.2.0"
+      },
+      {
+        "added": 1781727139889,
         "apkName": "doudou-16.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -96,73 +130,35 @@
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "16.1.0"
-      },
-      {
-        "added": 1773358850915,
-        "apkName": "doudou-16.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "doudou",
-        "size": 83310326,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "16.0.0"
-      },
-      {
-        "added": 1773358851174,
-        "apkName": "doudou-15.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "doudou",
-        "size": 89187822,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "15.0.0"
-      },
-      {
-        "added": 1773358851559,
-        "apkName": "doudou-14.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "doudou",
-        "size": 87948822,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "14.0.0"
-      },
-      {
-        "added": 1773358851901,
-        "apkName": "doudou-13.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "doudou",
-        "size": 86726178,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "13.0.0"
-      }
-    ],
-    "docan": [
-      {
-        "added": 1773358852207,
-        "apkName": "docan-3.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "docan",
-        "size": 27,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "3.0.0"
       }
     ],
     "finar": [
       {
-        "added": 1773358852370,
+        "added": 1781727140191,
+        "apkName": "finar-4.1.1.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "finar",
+        "size": 100372744,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "4.1.1"
+      },
+      {
+        "added": 1781727140430,
+        "apkName": "finar-4.1.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "finar",
+        "size": 100372752,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "4.1.0"
+      },
+      {
+        "added": 1781727140656,
         "apkName": "finar-3.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -174,7 +170,7 @@
         "versionName": "3.0.0"
       },
       {
-        "added": 1773358852634,
+        "added": 1781727140905,
         "apkName": "finar-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -186,7 +182,7 @@
         "versionName": "2.0.0"
       },
       {
-        "added": 1773358852910,
+        "added": 1781727141253,
         "apkName": "finar-1.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -198,71 +194,71 @@
         "versionName": "1.1.0"
       }
     ],
-    "klit": [
+    "kilt": [
       {
-        "added": 1773358853077,
-        "apkName": "klit-9.0.0.apk",
+        "added": 1781727141405,
+        "apkName": "kilt-10.1.2.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
-        "packageName": "klit",
+        "packageName": "kilt",
+        "size": 127362434,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "10.1.2"
+      },
+      {
+        "added": 1781727141685,
+        "apkName": "kilt-10.1.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "kilt",
+        "size": 127360638,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "10.1.0"
+      },
+      {
+        "added": 1781727141912,
+        "apkName": "kilt-9.0.1.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "kilt",
+        "size": 126596388,
+        "targetSdkVersion": 34,
+        "versionCode": 1,
+        "versionName": "9.0.1"
+      },
+      {
+        "added": 1781727142199,
+        "apkName": "kilt-9.0.0.apk",
+        "hash": "",
+        "hashType": "sha256",
+        "minSdkVersion": 21,
+        "packageName": "kilt",
         "size": 125441473,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "9.0.0"
       },
       {
-        "added": 1773358853375,
-        "apkName": "klit-8.1.0.apk",
+        "added": 1781727142490,
+        "apkName": "kilt-8.1.0.apk",
         "hash": "",
         "hashType": "sha256",
         "minSdkVersion": 21,
-        "packageName": "klit",
+        "packageName": "kilt",
         "size": 100602645,
         "targetSdkVersion": 34,
         "versionCode": 1,
         "versionName": "8.1.0"
-      },
-      {
-        "added": 1773358853694,
-        "apkName": "klit-8.0.1.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "klit",
-        "size": 100422253,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "8.0.1"
-      },
-      {
-        "added": 1773358853987,
-        "apkName": "klit-8.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "klit",
-        "size": 100422301,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "8.0.0"
-      },
-      {
-        "added": 1773358854237,
-        "apkName": "klit-7.0.0.apk",
-        "hash": "",
-        "hashType": "sha256",
-        "minSdkVersion": 21,
-        "packageName": "klit",
-        "size": 27,
-        "targetSdkVersion": 34,
-        "versionCode": 1,
-        "versionName": "7.0.0"
       }
     ],
     "repstore": [
       {
-        "added": 1773358854404,
+        "added": 1781727142784,
         "apkName": "repstore-4.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -274,7 +270,7 @@
         "versionName": "4.0.0"
       },
       {
-        "added": 1773358854630,
+        "added": 1781727143105,
         "apkName": "repstore-3.2.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -286,7 +282,7 @@
         "versionName": "3.2.0"
       },
       {
-        "added": 1773358854882,
+        "added": 1781727143355,
         "apkName": "repstore-3.1.0.apk",
         "hash": "",
         "hashType": "sha256",

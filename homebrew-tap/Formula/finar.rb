@@ -1,9 +1,9 @@
 class Finar < Formula
   desc "Jellyfin frontend client"
   homepage "https://openlyst.ink"
-  url "https://gitlab.com/api/v4/projects/79691113/packages/generic/github-mirror/build-14/finar-1.1.0-2026-02-24-macos-unsigned.zip"
-  version "3.0.0"
-  sha256 "7466addcbdda0700511cc1b0c3247ceb71631bc30ae7e2c5e9594fe6ae816a2f"
+  url "https://github.com/openlyst/builds/releases/download/build-94/finar-4.1.1-2026-05-07-macos-unsigned.zip"
+  version "4.1.1"
+  sha256 "1a57831904e6defcb5b8ad92083dc5497b0512ceb0d365227a2d2a4509c87694"
 
   def install
     # Generic installation
