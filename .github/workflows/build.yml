@@ -2329,17 +2329,18 @@ jobs:
           # Ensure that path is a valid debug keystore (AndroidDebugKey/android), not a symlink
           # to the release keystore, to avoid password/alias mismatch during packageRelease.
           rm -f "$HOME/.config/.android/debug.keystore"
-          if [ ! -f "$HOME/.config/.android/debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore "$HOME/.config/.android/debug.keystore" \
-              -storepass "$STORE_PASSWORD" \
-              -alias AndroidDebugKey \
-              -keypass "$KEY_PASSWORD" \
-              -dname "CN=Android Debug,O=Android,C=US" \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 >/dev/null 2>&1
-          fi
+          # If Kilt's build config resolves release signing to the debug keystore path,
+          # import the release key there so every build uses the same certificate.
+          keytool -importkeystore -noprompt \
+            -srckeystore android/keystore/upload-keystore.jks \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore "$HOME/.config/.android/debug.keystore" \
+            -deststoretype JKS \
+            -deststorepass "$STORE_PASSWORD" \
+            -destalias AndroidDebugKey \
+            -destkeypass "$KEY_PASSWORD" >/dev/null 2>&1 || true
 
           if keytool -importkeystore -noprompt \
             -srckeystore android/keystore/upload-keystore.jks \
