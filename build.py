@@ -854,7 +854,7 @@ end
 # Map AUR pkgname -> (Openlyst slug, app_name for package(), bundle_subdir or None)
 AUR_PACKAGES = {
     'finar-bin': ('finar', 'finar', 'bundle', 'data/finar.png'),
-    'klit-bin': ('klit', 'klit', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
+    'klit-bin': ('kilt', 'kilt', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'doudou-bin': ('doudou', 'doudou', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'docan-bin': ('docan', 'docan', None, 'data/flutter_assets/assets/icons/icon.png'),
     'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
@@ -995,14 +995,14 @@ EOF
         depends_str = " ".join(f"'{d}'" for d in depends)
         cat_map = {
             'finar': 'AudioVideo;Video;Player',
-            'klit': 'Network;Graphics',
+            'kilt': 'Network;Graphics',
             'doudou': 'Audio;Music;Player',
             'docan': 'Network;Chat;Utility',
             'opentorrent': 'Network;FileTransfer;',
         }
         kw_map = {
             'finar': 'jellyfin;media;video;streaming;',
-            'klit': 'e621;booru;privacy;',
+            'kilt': 'e621;booru;privacy;',
             'doudou': 'music;streaming;audio;player;',
             'docan': 'ai;chat;assistant;llm;',
             'opentorrent': 'torrent;download;',
@@ -1069,14 +1069,14 @@ sha256sums=('SKIP')
         depends_str = " ".join(f"'{d}'" for d in depends)
         cat_map = {
             'finar': 'AudioVideo;Video;Player',
-            'klit': 'Network;Graphics',
+            'kilt': 'Network;Graphics',
             'doudou': 'Audio;Music;Player',
             'docan': 'Network;Chat;Utility',
             'opentorrent': 'Network;FileTransfer;',
         }
         kw_map = {
             'finar': 'jellyfin;media;video;streaming;',
-            'klit': 'e621;booru;privacy;',
+            'kilt': 'e621;booru;privacy;',
             'doudou': 'music;streaming;audio;player;',
             'docan': 'ai;chat;assistant;llm;',
             'opentorrent': 'torrent;download;',
@@ -1151,7 +1151,9 @@ sha256sums=('SKIP')
                     pkgver = parts[1]
                 else:
                     pkgver = latest.get('version', '1.0.0')
-                pkgname_unstable = f"{slug}-unstable"
+                # Derive base pkgname from known AUR packages so renames keep legacy AUR names
+                base_pkgname = next((pn for pn, (s, _, _, _) in AUR_PACKAGES.items() if s == slug), slug)
+                pkgname_unstable = f"{base_pkgname}-unstable"
                 content = self.build_pkgbuild_from_url(pkgname_unstable, slug, app, linux_url, pkgver)
                 if content:
                     pkg_dir = out / pkgname_unstable
