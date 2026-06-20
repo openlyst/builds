@@ -644,6 +644,11 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Enable Developer Mode
+        shell: powershell
+        run: |
+          New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -PropertyType DWORD -Force
+
       - name: Pub get
         run: flutter pub get
 
