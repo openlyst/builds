@@ -663,10 +663,41 @@ jobs:
             sed -i.bak '/headerSize.*=/a\  (void)headerSize;' "$f" && rm -f "${f}.bak" || true
           fi
 
+      - name: Patch plugin CMake for Windows symlink extraction
+        shell: powershell
+        run: |
+          # smtc_windows: extract into real pub-cache dir instead of symlink
+          $smtc = Get-ChildItem -Path "$env:PUB_CACHE\hosted\pub.dev" -Recurse -Filter "CMakeLists.txt" -ErrorAction SilentlyContinue |
+                    Where-Object { $_.FullName -match "smtc_windows-[\d.]+\\windows\\CMakeLists\.txt" } |
+                    Select-Object -First 1
+          if ($smtc) {
+            $txt = Get-Content $smtc.FullName -Raw
+            if ($txt -notmatch 'file\(REAL_PATH "\$\{CMAKE_CURRENT_SOURCE_DIR\}" REAL_SOURCE_DIR\)') {
+              $txt = $txt -replace 'set\(LibRoot "\$\{CMAKE_CURRENT_SOURCE_DIR\}/\$\{LibraryVersion\}"\)',
+                                 "file(REAL_PATH `"`${CMAKE_CURRENT_SOURCE_DIR}`" REAL_SOURCE_DIR)`r`nset(LibRoot `"`${REAL_SOURCE_DIR}/`${LibraryVersion}`")"
+              Set-Content $smtc.FullName -Value $txt -NoNewline
+            }
+          }
+          # audiotags: same fix
+          $audio = Get-ChildItem -Path "$env:PUB_CACHE\hosted\pub.dev" -Recurse -Filter "CMakeLists.txt" -ErrorAction SilentlyContinue |
+                     Where-Object { $_.FullName -match "audiotags-[\d.]+\\windows\\CMakeLists\.txt" } |
+                     Select-Object -First 1
+          if ($audio) {
+            $txt = Get-Content $audio.FullName -Raw
+            if ($txt -notmatch 'file\(REAL_PATH "\$\{CMAKE_CURRENT_SOURCE_DIR\}" REAL_SOURCE_DIR\)') {
+              $txt = $txt -replace 'set\(LibPath "\$\{CMAKE_CURRENT_SOURCE_DIR\}/windows\.tar\.gz"\)',
+                                 "file(REAL_PATH `"`${CMAKE_CURRENT_SOURCE_DIR}`" REAL_SOURCE_DIR)`r`nset(LibPath `"`${REAL_SOURCE_DIR}/windows.tar.gz`")"
+              $txt = $txt -replace '\$\{CMAKE_CURRENT_SOURCE_DIR\}/audiotags\.dll', '${REAL_SOURCE_DIR}/audiotags.dll'
+              $txt = $txt -replace 'WORKING_DIRECTORY \$\{CMAKE_CURRENT_SOURCE_DIR\}', 'WORKING_DIRECTORY ${REAL_SOURCE_DIR}'
+              Set-Content $audio.FullName -Value $txt -NoNewline
+            }
+          }
+
       - name: Build Windows
         id: build
         env:
           _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS: 1
+          CL: /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
         run: |
           flutter build windows --release 2>&1 | Tee-Object -Variable buildOutput
           $warnings = ($buildOutput | Select-String -Pattern "warning|deprecated" -AllMatches).Matches.Count
