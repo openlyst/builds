@@ -18,6 +18,13 @@ Repo:
 
 Builds:
 
+  - versionName: '20.0.0'
+    versionCode: 20.0.0
+    commit: v20.0.0
+    subdir: app
+    gradle:
+      - yes
+
   - versionName: '19.0.0'
     versionCode: 1
     commit: v19.0.0
@@ -46,12 +53,5 @@ Builds:
     gradle:
       - yes
 
-  - versionName: '16.1.0'
-    versionCode: 1
-    commit: v16.1.0
-    subdir: app
-    gradle:
-      - yes
-
-CurrentVersion: '19.0.0'
-CurrentVersionCode: 1
+CurrentVersion: '20.0.0'
+CurrentVersionCode: 20.0.0
