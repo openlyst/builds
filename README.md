@@ -110,10 +110,9 @@ Known packages are updated automatically from the Openlyst API:
 | `finar-bin` | Finar (Jellyfin client) |
 | `klit-bin` | Kilt |
 | `doudou-bin` | Doudou (music player) |
-| `lystcode` | LystCode |
 
 > [!NOTE]
-> `docan-bin` and `opentorrent-bin` are currently disabled. Their config entries are commented out in `build.py` and can be re-enabled at any time.
+> `docan-bin`, `lystcode`, and `opentorrent-bin` are currently disabled. Their config entries are commented out in `build.py` and can be re-enabled at any time.
 
 New apps with Linux builds get PKGBUILDs generated automatically — just create the package on AUR first, then the workflow handles the rest.
 

@@ -560,7 +560,7 @@ CurrentVersionCode: {latest_version.get('buildVersion', '1')}
                     "packageName": package_id,
                     "size": get_file_size(apk_url) or 0,
                     "targetSdkVersion": 34,
-                    "versionCode": int(v.get('buildVersion', 1)),
+                    "versionCode": int(str(v.get('buildVersion', 1)).replace('.', '')) or 1,
                     "versionName": v.get('version', '1.0')
                 })
             
@@ -857,7 +857,7 @@ AUR_PACKAGES = {
     'klit-bin': ('kilt', 'kilt', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'doudou-bin': ('doudou', 'doudou', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     # 'docan-bin': ('docan', 'docan', None, 'data/flutter_assets/assets/icons/icon.png'),
-    'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
+    # 'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
 }
 
 # GitHub repo for build workflow releases (unstable AUR packages use these download URLs)
