@@ -856,7 +856,7 @@ AUR_PACKAGES = {
     'finar-bin': ('finar', 'finar', 'bundle', 'data/finar.png'),
     'klit-bin': ('kilt', 'kilt', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
     'doudou-bin': ('doudou', 'doudou', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
-    'docan-bin': ('docan', 'docan', None, 'data/flutter_assets/assets/icons/icon.png'),
+    # 'docan-bin': ('docan', 'docan', None, 'data/flutter_assets/assets/icons/icon.png'),
     'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
 }
 
@@ -997,15 +997,15 @@ EOF
             'finar': 'AudioVideo;Video;Player',
             'kilt': 'Network;Graphics',
             'doudou': 'Audio;Music;Player',
-            'docan': 'Network;Chat;Utility',
-            'opentorrent': 'Network;FileTransfer;',
+            # 'docan': 'Network;Chat;Utility',
+            # 'opentorrent': 'Network;FileTransfer;',
         }
         kw_map = {
             'finar': 'jellyfin;media;video;streaming;',
             'kilt': 'e621;booru;privacy;',
             'doudou': 'music;streaming;audio;player;',
-            'docan': 'ai;chat;assistant;llm;',
-            'opentorrent': 'torrent;download;',
+            # 'docan': 'ai;chat;assistant;llm;',
+            # 'opentorrent': 'torrent;download;',
         }
         categories = cat_map.get(slug, 'Utility')
         keywords = kw_map.get(slug, '')
@@ -1071,15 +1071,15 @@ sha256sums=('SKIP')
             'finar': 'AudioVideo;Video;Player',
             'kilt': 'Network;Graphics',
             'doudou': 'Audio;Music;Player',
-            'docan': 'Network;Chat;Utility',
-            'opentorrent': 'Network;FileTransfer;',
+            # 'docan': 'Network;Chat;Utility',
+            # 'opentorrent': 'Network;FileTransfer;',
         }
         kw_map = {
             'finar': 'jellyfin;media;video;streaming;',
             'kilt': 'e621;booru;privacy;',
             'doudou': 'music;streaming;audio;player;',
-            'docan': 'ai;chat;assistant;llm;',
-            'opentorrent': 'torrent;download;',
+            # 'docan': 'ai;chat;assistant;llm;',
+            # 'opentorrent': 'torrent;download;',
         }
         categories = cat_map.get(slug, 'Utility')
         keywords = kw_map.get(slug, '')
@@ -1193,6 +1193,9 @@ sha256sums=('SKIP')
         for app in apps_linux or []:
             slug = app.get('slug')
             if not slug or slug in existing_slugs or slug in built_slugs:
+                continue
+            # skip disabled apps
+            if slug in ('docan', 'opentorrent'):
                 continue
             versions = self.client.get_app_versions(slug)
             if not versions:
