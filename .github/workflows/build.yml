@@ -4629,6 +4629,8 @@ jobs:
             echo "" >> release_notes.md
           fi
 
+      - name: Generate build report (continued)
+        run: |
           # Kilt
           if [ "${{ github.event.inputs.build_kilt }}" == "true" ]; then
             echo "### Kilt" >> release_notes.md
