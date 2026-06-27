@@ -1110,11 +1110,9 @@ sha256sums=('SKIP')
     def build(
         self,
         output_dir: Optional[str] = None,
-        no_unstable_aur: bool = True,
         unstable_aur_only: bool = False,
     ) -> bool:
         """Generate PKGBUILD for known AUR packages and any new app with a Linux build.
-        no_unstable_aur: if True, do not generate -unstable AUR packages (default True for Build All Repositories).
         unstable_aur_only: if True, only generate -unstable packages from GitHub releases (for Build Apps workflow).
         """
         out = self.output_dir if output_dir is None else Path(output_dir)
@@ -1123,34 +1121,22 @@ sha256sums=('SKIP')
         success = 0
 
         if unstable_aur_only:
-            # Only generate unstable AUR packages (Build Apps workflow)
+            # Only generate unstable AUR packages from GitHub releases (Build Apps workflow)
             slugs_for_unstable: Set[str] = {s for (s, _, _, _) in AUR_PACKAGES.values()}
             apps_linux = self.client.get_all_apps(platform="Linux")
             for app in apps_linux or []:
                 slug = app.get('slug')
                 if slug:
-                    versions = self.client.get_app_versions(slug)
-                    if versions and get_linux_zip_url(versions[0]):
-                        slugs_for_unstable.add(slug)
+                    slugs_for_unstable.add(slug)
             for slug in slugs_for_unstable:
+                gh = get_latest_linux_zip_from_github(slug, self.client.session)
+                if not gh:
+                    logger.debug(f"No GitHub release Linux zip for {slug}, skipping unstable")
+                    continue
+                linux_url, pkgver = gh
                 app = self.client.get_app_details(slug)
                 if not app:
                     continue
-                versions = self.client.get_app_versions(slug)
-                if not versions:
-                    continue
-                latest = versions[0]
-                linux_url = get_linux_zip_url(latest)
-                if not linux_url:
-                    continue
-                # Extract pkgver from filename e.g. doudou-19.0.0-2026-05-13-linux-x64.zip -> 19.0.0
-                url_path = urlparse(linux_url).path
-                filename = Path(url_path).name
-                parts = filename.replace(".zip", "").split("-")
-                if len(parts) >= 2:
-                    pkgver = parts[1]
-                else:
-                    pkgver = latest.get('version', '1.0.0')
                 # Derive base pkgname from known AUR packages so renames keep legacy AUR names
                 base_pkgname = next((pn for pn, (s, _, _, _) in AUR_PACKAGES.items() if s == slug), slug)
                 pkgname_unstable = f"{base_pkgname}-unstable"
@@ -1189,7 +1175,6 @@ sha256sums=('SKIP')
         # New apps with Linux zip that don't have an AUR package yet (e.g. opentorrent)
         existing_slugs = {t[0] for t in AUR_PACKAGES.values()}
         apps_linux = self.client.get_all_apps(platform="Linux")
-        new_app_slugs: Set[str] = set()
         for app in apps_linux or []:
             slug = app.get('slug')
             if not slug or slug in existing_slugs or slug in built_slugs:
@@ -1210,27 +1195,7 @@ sha256sums=('SKIP')
                 pkg_dir.mkdir(parents=True, exist_ok=True)
                 (pkg_dir / "PKGBUILD").write_text(content, encoding="utf-8")
                 logger.info(f"Wrote AUR PKGBUILD (new app): {pkg_dir / 'PKGBUILD'}")
-                new_app_slugs.add(slug)
                 success += 1
-        # Unstable AUR packages only when not no_unstable_aur (Build Apps workflow does unstable separately)
-        if not no_unstable_aur:
-            for slug in built_slugs | new_app_slugs:
-                gh = get_latest_linux_zip_from_github(slug, self.client.session)
-                if not gh:
-                    logger.debug(f"No GitHub release Linux zip for {slug}, skipping unstable")
-                    continue
-                linux_url, pkgver = gh
-                app = self.client.get_app_details(slug)
-                if not app:
-                    continue
-                pkgname_unstable = f"{slug}-unstable"
-                content = self.build_pkgbuild_from_url(pkgname_unstable, slug, app, linux_url, pkgver)
-                if content:
-                    pkg_dir = out / pkgname_unstable
-                    pkg_dir.mkdir(parents=True, exist_ok=True)
-                    (pkg_dir / "PKGBUILD").write_text(content, encoding="utf-8")
-                    logger.info(f"Wrote AUR PKGBUILD (unstable): {pkg_dir / 'PKGBUILD'}")
-                    success += 1
         if success == 0:
             logger.error("No AUR PKGBUILDs generated")
             return False
@@ -1317,18 +1282,6 @@ Examples:
         help='Enable verbose logging'
     )
     parser.add_argument(
-        '--no-unstable-aur',
-        action='store_true',
-        default=True,
-        help='Do not generate -unstable AUR packages (default: true for Build All Repositories)'
-    )
-    parser.add_argument(
-        '--unstable-aur',
-        dest='no_unstable_aur',
-        action='store_false',
-        help='Generate -unstable AUR packages when building AUR (used with Build All Repositories if desired)'
-    )
-    parser.add_argument(
         '--unstable-aur-only',
         action='store_true',
         help='Only generate -unstable AUR packages from GitHub releases (for Build Apps workflow)'
@@ -1405,7 +1358,6 @@ Examples:
         builder = AURBuilder(client, output_dir=args.aur_output)
         results['aur'] = builder.build(
             output_dir=args.aur_output,
-            no_unstable_aur=args.no_unstable_aur,
             unstable_aur_only=getattr(args, 'unstable_aur_only', False),
         )
     
