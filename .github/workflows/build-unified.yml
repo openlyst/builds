@@ -14,6 +14,7 @@ on:
           - fdroid
           - homebrew
           - aur
+          - chocolatey
       platform:
         description: 'Homebrew platform (only for homebrew target)'
         required: false
@@ -190,6 +191,14 @@ jobs:
             echo "--- AUR packages (stable -bin only) ---"
             ls -la aur-packages/ 2>/dev/null || echo "Empty"
           fi
+          
+          if [ -d "chocolatey-packages" ]; then
+            echo "--- Chocolatey packages ---"
+            ls -la chocolatey-packages/ 2>/dev/null || echo "Empty"
+            echo "Packages count:"
+            find chocolatey-packages -name "*.nuspec" 2>/dev/null | wc -l || echo "0"
+            echo ""
+          fi
       
       - name: Configure git
         run: |
@@ -199,7 +208,7 @@ jobs:
       - name: Commit and push changes
         run: |
           # Add all output directories
-          git add repo/ fdroid-repo/ homebrew-tap/ 2>/dev/null || true
+          git add repo/ fdroid-repo/ homebrew-tap/ chocolatey-packages/ 2>/dev/null || true
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -241,3 +250,79 @@ jobs:
           path: homebrew-tap/
           retention-days: 90
           if-no-files-found: ignore
+      
+      - name: Upload Chocolatey artifact
+        if: contains(github.event.inputs.target || 'all', 'chocolatey') || github.event.inputs.target == 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chocolatey-packages
+          path: chocolatey-packages/
+          retention-days: 90
+          if-no-files-found: ignore
+
+  publish-chocolatey:
+    needs: build
+    runs-on: windows-latest
+    if: contains(github.event.inputs.target || 'all', 'chocolatey') || github.event.inputs.target == 'all'
+
+    steps:
+      - name: Download Chocolatey artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: chocolatey-packages
+          path: chocolatey-packages
+
+      - name: Set Chocolatey API key
+        if: ${{ env.CHOCOLATEY_API_KEY != '' }}
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: choco apikey -k $env:CHOCOLATEY_API_KEY -s https://push.chocolatey.org/
+
+      - name: Pack and push packages
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+
+          # Find all .nuspec files and pack + push each one
+          Get-ChildItem -Path chocolatey-packages -Recurse -Filter "*.nuspec" | ForEach-Object {
+            $pkgDir = $_.DirectoryName
+            $nuspec = $_.FullName
+            $pkgName = $_.BaseName
+
+            Write-Host "::notice::Packing $pkgName..."
+            Push-Location $pkgDir
+            try {
+              choco pack $nuspec --no-color
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "::warning::Failed to pack $pkgName (exit $LASTEXITCODE)"
+                Pop-Location
+                return
+              }
+
+              # Find the generated .nupkg
+              $nupkg = Get-ChildItem -Path $pkgDir -Filter "*.nupkg" | Select-Object -First 1
+              if (-not $nupkg) {
+                Write-Host "::warning::No .nupkg found for $pkgName after packing"
+                Pop-Location
+                return
+              }
+
+              if ($env:CHOCOLATEY_API_KEY -and $env:CHOCOLATEY_API_KEY -ne '') {
+                Write-Host "::notice::Pushing $($nupkg.Name) to Chocolatey..."
+                choco push $nupkg.FullName --source https://push.chocolatey.org/ --force --api-key $env:CHOCOLATEY_API_KEY
+                if ($LASTEXITCODE -eq 0) {
+                  Write-Host "::notice::Successfully pushed $($nupkg.Name)"
+                } else {
+                  # 409 = version already exists, which is fine
+                  Write-Host "::warning::Push for $($nupkg.Name) returned exit $LASTEXITCODE (may already exist at this version)"
+                }
+              } else {
+                Write-Host "::notice::No CHOCOLATEY_API_KEY set, skipping push for $($nupkg.Name)"
+              }
+            } finally {
+              Pop-Location
+            }
+          }
+
+          Write-Host "Chocolatey publish step complete"
