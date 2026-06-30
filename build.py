@@ -1244,6 +1244,18 @@ class ChocolateyBuilder:
 
         return None
 
+    def _extract_project_url(self, url: str) -> str:
+        """Extract base project URL from a GitHub/GitLab tree URL.
+
+        GitLab: https://gitlab.com/group/project/-/tree/COMMIT -> https://gitlab.com/group/project
+        GitHub: https://github.com/user/repo/tree/COMMIT -> https://github.com/user/repo
+        """
+        if '/-/tree/' in url:
+            return url.split('/-/tree/')[0].rstrip('/')
+        if '/tree/' in url:
+            return url.split('/tree/')[0].rstrip('/')
+        return url.rstrip('/')
+
     def _generate_nuspec(self, app: Dict, version: Dict, pkg_id: str) -> str:
         """Generate .nuspec XML content."""
         pkg_id = pkg_id.lower()
@@ -1255,23 +1267,30 @@ class ChocolateyBuilder:
         if not loc_desc:
             loc_desc = desc
         loc_desc = str(loc_desc).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')[:4000]
-        homepage = app.get('website') or app.get('sourceCode') or 'https://openlyst.ink'
+        homepage = app.get('website') or 'https://openlyst.ink'
         icon_url = app.get('iconURL', '') or ''
-        project_url = app.get('sourceCode') or homepage
-        source_code = app.get('sourceCode', '') or ''
         author = app.get('developer') or app.get('author') or 'OpenLyst'
         author = str(author).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+        # sourceCode lives on the version dict, not the app dict
+        source_code = version.get('sourceCode', '') or ''
+        base_url = self._extract_project_url(source_code) if source_code else ''
+        project_url = base_url or homepage
 
         # Build optional metadata elements
         optional = ''
         if icon_url:
             optional += f'\n    <iconUrl>{icon_url}</iconUrl>'
 
-        # Release notes - prefer GitHub releases page, fall back to homepage
-        if source_code and 'github.com' in source_code:
-            release_notes = f"{source_code.rstrip('/')}/releases"
-            bug_tracker = f"{source_code.rstrip('/')}/issues"
-            docs_url = homepage
+        # Derive release notes, bug tracker, docs from source code URL
+        if base_url and 'github.com' in base_url:
+            release_notes = f"{base_url}/releases"
+            bug_tracker = f"{base_url}/issues"
+            docs_url = f"{base_url}/wiki"
+        elif base_url and 'gitlab.com' in base_url:
+            release_notes = f"{base_url}/-/releases"
+            bug_tracker = f"{base_url}/-/issues"
+            docs_url = f"{base_url}/-/wikis"
         else:
             release_notes = homepage
             bug_tracker = ''
