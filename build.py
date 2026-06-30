@@ -1204,6 +1204,242 @@ sha256sums=('SKIP')
 
 
 # =============================================================================
+# Chocolatey Package Builder
+# =============================================================================
+
+class ChocolateyBuilder:
+    """Generate Chocolatey package specs (.nuspec + install scripts) from Openlyst API."""
+
+    def __init__(self, client: OpenLystClient, output_dir: str = "chocolatey-packages"):
+        self.client = client
+        self.output_dir = Path(output_dir)
+
+    def _get_windows_download(self, version: Dict) -> Optional[Dict]:
+        """Extract Windows download info from version data.
+        Prefers exe installer, falls back to zip."""
+        downloads = version.get('downloads', {})
+        if not isinstance(downloads, dict):
+            return None
+        win = downloads.get('Windows', {})
+        if not isinstance(win, dict):
+            return None
+
+        # Try exe first (installer is better for choco)
+        exe = win.get('exe', {})
+        if isinstance(exe, dict):
+            for arch in ['x86_64', 'arm64']:
+                url = exe.get(arch, '')
+                if isinstance(url, str) and url.startswith('http'):
+                    return {'url': url, 'type': 'exe', 'arch': arch}
+
+        # Fall back to zip
+        zip_dl = win.get('zip', {})
+        if isinstance(zip_dl, dict):
+            for arch in ['x86_64', 'arm64']:
+                url = zip_dl.get(arch, '')
+                if isinstance(url, str) and url.startswith('http'):
+                    return {'url': url, 'type': 'zip', 'arch': arch}
+        elif isinstance(zip_dl, str) and zip_dl.startswith('http'):
+            return {'url': zip_dl, 'type': 'zip', 'arch': 'universal'}
+
+        return None
+
+    def _generate_nuspec(self, app: Dict, version: Dict, pkg_id: str) -> str:
+        """Generate .nuspec XML content."""
+        # Chocolatey requires lowercase pkg ids
+        pkg_id = pkg_id.lower()
+        version_str = str(version.get('version', '1.0.0'))
+        # Chocolatey version format: strip any non-numeric suffix stuff
+        # e.g. "20.0.0" stays as-is, but "20.0.0-beta" becomes "20.0.0-beta"
+        desc = (app.get('subtitle') or app.get('name', '')).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Use first line of localized description for longer description
+        loc_desc = app.get('localizedDescription', '')
+        if isinstance(loc_desc, dict):
+            loc_desc = loc_desc.get('en', '')
+        if not loc_desc:
+            loc_desc = desc
+        # Escape XML chars
+        loc_desc = str(loc_desc).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')[:4000]
+        homepage = app.get('website') or app.get('sourceCode') or 'https://openlyst.ink'
+        license_name = app.get('license', 'GPL-3.0')
+        if not license_name:
+            license_name = 'GPL-3.0'
+        icon_url = app.get('iconURL', '') or ''
+        project_url = app.get('sourceCode') or homepage
+
+        nuspec = f'''<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>{pkg_id}</id>
+    <version>{version_str}</version>
+    <title>{app.get('name', pkg_id)}</title>
+    <authors>OpenLyst</authors>
+    <owners>openlyst</owners>
+    <summary>{desc}</summary>
+    <description>{loc_desc}</description>
+    <projectUrl>{project_url}</projectUrl>
+    <packageSourceUrl>https://github.com/openlyst/builds</packageSourceUrl>
+    <licenseUrl>https://github.com/openlyst/builds/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>OpenLyst</copyright>
+    <tags>{pkg_id} openlyst windows</tags>
+    <dependencies>
+      <dependency id="chocolatey" version="0.10.5" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\\**" target="tools" />
+  </files>
+</package>
+'''
+        return nuspec
+
+    def _generate_install_ps1(self, app: Dict, version: Dict, dl_info: Dict, pkg_id: str) -> str:
+        """Generate chocolateyInstall.ps1."""
+        url = dl_info['url']
+        dl_type = dl_info['type']
+        pkg_name = app.get('name', pkg_id)
+        version_str = str(version.get('version', '1.0.0'))
+
+        # Generate a filename from the URL
+        url_path = urlparse(url).path
+        filename = Path(url_path).name or f"{pkg_id}-{version_str}.zip"
+
+        if dl_type == 'exe':
+            # For exe installers, use Install-ChocolateyPackage
+            ps1 = f'''$ErrorActionPreference = 'Stop'
+
+$packageName = '{pkg_id.lower()}'
+$version     = '{version_str}'
+$url         = '{url}'
+$url64       = '{url}'
+
+$packageArgs = @{{
+  packageName   = $packageName
+  fileType      = 'exe'
+  url           = $url
+  url64bit      = $url64
+  silentArgs    = '/S /D=C:\\Program Files\\{pkg_name}'
+  validExitCodes= @(0, 3010, 1641)
+  softwareName  = '{pkg_name}*'
+}}
+
+Install-ChocolateyPackage @packageArgs
+'''
+        else:
+            # For zip archives, download and extract
+            ps1 = f'''$ErrorActionPreference = 'Stop'
+
+$packageName = '{pkg_id.lower()}'
+$version     = '{version_str}'
+$url         = '{url}'
+$url64       = '{url}'
+
+$installDir = Join-Path $env:ProgramFiles '{pkg_name}'
+$zipFile    = Join-Path $env:TEMP '{filename}'
+
+# Download
+Get-ChocolateyWebFile -PackageName $packageName -FileFullPath $zipFile -Url $url -Url64bit $url64
+
+# Extract
+Get-ChocolateyUnzip -FileFullPath $zipFile -Destination $installDir -PackageName $packageName
+
+# Create shim for the exe if we can find one
+$exeFiles = Get-ChildItem -Path $installDir -Filter '*.exe' -Recurse -ErrorAction SilentlyContinue
+if ($exeFiles) {{
+    $mainExe = $exeFiles | Select-Object -First 1
+    Install-BinFile -Name $packageName -Path $mainExe.FullName
+}}
+
+Remove-Item $zipFile -Force -ErrorAction SilentlyContinue
+'''
+        return ps1
+
+    def _generate_uninstall_ps1(self, app: Dict, pkg_id: str) -> str:
+        """Generate chocolateyUninstall.ps1."""
+        pkg_name = app.get('name', pkg_id)
+        ps1 = f'''$ErrorActionPreference = 'Stop'
+
+$packageName = '{pkg_id.lower()}'
+
+# Remove shim
+Uninstall-BinFile -Name $packageName
+
+# Remove install directory
+$installDir = Join-Path $env:ProgramFiles '{pkg_name}'
+if (Test-Path $installDir) {{
+    Remove-Item -Path $installDir -Recurse -Force -ErrorAction SilentlyContinue
+}}
+'''
+        return ps1
+
+    def build(self, output_dir: Optional[str] = None) -> bool:
+        """Generate Chocolatey package specs for all Windows apps."""
+        out = self.output_dir if output_dir is None else Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+
+        apps = self.client.get_all_apps(platform="Windows")
+        if not apps:
+            logger.error("No Windows apps found")
+            return False
+
+        logger.info(f"Found {len(apps)} Windows apps for Chocolatey")
+        generated = 0
+        failed = 0
+
+        for app in apps:
+            slug = app.get('slug')
+            if not slug:
+                failed += 1
+                continue
+
+            versions = self.client.get_app_versions(slug)
+            if not versions:
+                logger.warning(f"No versions for {slug}")
+                failed += 1
+                continue
+
+            latest = versions[0]
+            dl_info = self._get_windows_download(latest)
+            if not dl_info:
+                logger.info(f"No Windows download URL for {slug}, skipping")
+                failed += 1
+                continue
+
+            pkg_id = slug.lower()
+
+            # Create package directory structure
+            pkg_dir = out / pkg_id
+            tools_dir = pkg_dir / "tools"
+            tools_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate files
+            nuspec = self._generate_nuspec(app, latest, pkg_id)
+            install_ps1 = self._generate_install_ps1(app, latest, dl_info, pkg_id)
+            uninstall_ps1 = self._generate_uninstall_ps1(app, pkg_id)
+
+            (pkg_dir / f"{pkg_id}.nuspec").write_text(nuspec, encoding="utf-8")
+            (tools_dir / "chocolateyInstall.ps1").write_text(install_ps1, encoding="utf-8")
+            (tools_dir / "chocolateyUninstall.ps1").write_text(uninstall_ps1, encoding="utf-8")
+
+            logger.info(f"Generated Chocolatey package: {pkg_dir}")
+            generated += 1
+
+        # Write a summary index
+        index = {
+            "name": "OpenLyst Chocolatey Packages",
+            "description": "Chocolatey packages for Windows applications from OpenLyst",
+            "homepage": "https://openlyst.ink",
+            "generated_at": datetime.now().isoformat() + "Z",
+            "packages_count": generated,
+        }
+        (out / "index.json").write_text(json.dumps(index, indent=2), encoding="utf-8")
+
+        logger.info(f"Chocolatey: {generated} packages generated, {failed} skipped")
+        return generated > 0
+
+
+# =============================================================================
 # Main Entry Point
 # =============================================================================
 
@@ -1219,6 +1455,7 @@ Examples:
     python build.py --target homebrew               # Build Homebrew tap (both platforms)
     python build.py --target homebrew --platform macOS    # Build Homebrew for macOS only
     python build.py --target aur                         # Build AUR PKGBUILDs only
+    python build.py --target chocolatey               # Build Chocolatey packages only
     python build.py --target altstore,fdroid        # Build multiple targets
         """
     )
@@ -1227,7 +1464,7 @@ Examples:
         '--target',
         type=str,
         default='all',
-        help='Build target(s): all, altstore, fdroid, homebrew, aur, or comma-separated list'
+        help='Build target(s): all, altstore, fdroid, homebrew, aur, chocolatey, or comma-separated list'
     )
     parser.add_argument(
         '--platform',
@@ -1259,6 +1496,12 @@ Examples:
         type=str,
         default='aur-packages',
         help='Output directory for AUR PKGBUILDs (default: aur-packages)'
+    )
+    parser.add_argument(
+        '--chocolatey-output',
+        type=str,
+        default='chocolatey-packages',
+        help='Output directory for Chocolatey packages (default: chocolatey-packages)'
     )
     parser.add_argument(
         '--repo-url',
@@ -1295,7 +1538,7 @@ Examples:
     # Parse targets
     targets: Set[str] = set()
     if args.target.lower() == 'all':
-        targets = {'altstore', 'fdroid', 'homebrew', 'aur'}
+        targets = {'altstore', 'fdroid', 'homebrew', 'aur', 'chocolatey'}
     else:
         targets = {t.strip().lower() for t in args.target.split(',')}
     
@@ -1360,6 +1603,14 @@ Examples:
             output_dir=args.aur_output,
             unstable_aur_only=getattr(args, 'unstable_aur_only', False),
         )
+    
+    # Build Chocolatey packages
+    if 'chocolatey' in targets:
+        logger.info("=" * 60)
+        logger.info("Building Chocolatey Packages")
+        logger.info("=" * 60)
+        builder = ChocolateyBuilder(client, output_dir=args.chocolatey_output)
+        results['chocolatey'] = builder.build(output_dir=args.chocolatey_output)
     
     # Summary
     logger.info("=" * 60)
