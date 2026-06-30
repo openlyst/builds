@@ -1244,28 +1244,65 @@ class ChocolateyBuilder:
 
         return None
 
+    def _extract_project_url(self, url: str) -> str:
+        """Extract base project URL from a GitHub/GitLab tree URL.
+
+        GitLab: https://gitlab.com/group/project/-/tree/COMMIT -> https://gitlab.com/group/project
+        GitHub: https://github.com/user/repo/tree/COMMIT -> https://github.com/user/repo
+        """
+        if '/-/tree/' in url:
+            return url.split('/-/tree/')[0].rstrip('/')
+        if '/tree/' in url:
+            return url.split('/tree/')[0].rstrip('/')
+        return url.rstrip('/')
+
     def _generate_nuspec(self, app: Dict, version: Dict, pkg_id: str) -> str:
         """Generate .nuspec XML content."""
-        # Chocolatey requires lowercase pkg ids
         pkg_id = pkg_id.lower()
         version_str = str(version.get('version', '1.0.0'))
-        # Chocolatey version format: strip any non-numeric suffix stuff
-        # e.g. "20.0.0" stays as-is, but "20.0.0-beta" becomes "20.0.0-beta"
         desc = (app.get('subtitle') or app.get('name', '')).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-        # Use first line of localized description for longer description
         loc_desc = app.get('localizedDescription', '')
         if isinstance(loc_desc, dict):
             loc_desc = loc_desc.get('en', '')
         if not loc_desc:
             loc_desc = desc
-        # Escape XML chars
         loc_desc = str(loc_desc).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')[:4000]
-        homepage = app.get('website') or app.get('sourceCode') or 'https://openlyst.ink'
-        license_name = app.get('license', 'GPL-3.0')
-        if not license_name:
-            license_name = 'GPL-3.0'
+        homepage = app.get('website') or 'https://openlyst.ink'
         icon_url = app.get('iconURL', '') or ''
-        project_url = app.get('sourceCode') or homepage
+        author = app.get('developer') or app.get('author') or 'OpenLyst'
+        author = str(author).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+        # sourceCode lives on the version dict, not the app dict
+        source_code = version.get('sourceCode', '') or ''
+        base_url = self._extract_project_url(source_code) if source_code else ''
+        project_url = base_url or homepage
+
+        # Build optional metadata elements
+        optional = ''
+        if icon_url:
+            optional += f'\n    <iconUrl>{icon_url}</iconUrl>'
+
+        # Derive release notes, bug tracker, docs from source code URL
+        if base_url and 'github.com' in base_url:
+            release_notes = f"{base_url}/releases"
+            bug_tracker = f"{base_url}/issues"
+            docs_url = f"{base_url}/wiki"
+        elif base_url and 'gitlab.com' in base_url:
+            release_notes = f"{base_url}/-/releases"
+            bug_tracker = f"{base_url}/-/issues"
+            docs_url = f"{base_url}/-/wikis"
+        else:
+            release_notes = homepage
+            bug_tracker = ''
+            docs_url = ''
+
+        optional += f'\n    <releaseNotes>{release_notes}</releaseNotes>'
+        if source_code:
+            optional += f'\n    <projectSourceUrl>{source_code}</projectSourceUrl>'
+        if docs_url:
+            optional += f'\n    <docsUrl>{docs_url}</docsUrl>'
+        if bug_tracker:
+            optional += f'\n    <bugTrackerUrl>{bug_tracker}</bugTrackerUrl>'
 
         nuspec = f'''<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
@@ -1273,7 +1310,7 @@ class ChocolateyBuilder:
     <id>{pkg_id}</id>
     <version>{version_str}</version>
     <title>{app.get('name', pkg_id)}</title>
-    <authors>OpenLyst</authors>
+    <authors>{author}</authors>
     <owners>openlyst</owners>
     <summary>{desc}</summary>
     <description>{loc_desc}</description>
@@ -1282,7 +1319,7 @@ class ChocolateyBuilder:
     <licenseUrl>https://github.com/openlyst/builds/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <copyright>OpenLyst</copyright>
-    <tags>{pkg_id} openlyst windows</tags>
+    <tags>{pkg_id} openlyst windows</tags>{optional}
     <dependencies>
       <dependency id="chocolatey" version="0.10.5" />
     </dependencies>
@@ -1294,7 +1331,7 @@ class ChocolateyBuilder:
 '''
         return nuspec
 
-    def _generate_install_ps1(self, app: Dict, version: Dict, dl_info: Dict, pkg_id: str) -> str:
+    def _generate_install_ps1(self, app: Dict, version: Dict, dl_info: Dict, pkg_id: str, checksum: str = '') -> str:
         """Generate chocolateyInstall.ps1."""
         url = dl_info['url']
         dl_type = dl_info['type']
@@ -1305,8 +1342,16 @@ class ChocolateyBuilder:
         url_path = urlparse(url).path
         filename = Path(url_path).name or f"{pkg_id}-{version_str}.zip"
 
+        # Build checksum lines for install script
+        checksum_lines = ''
+        if checksum:
+            checksum_lines = f"""
+  checksum      = '{checksum}'
+  checksumType  = 'sha256'
+  checksum64    = '{checksum}'
+  checksumType64= 'sha256'"""
+
         if dl_type == 'exe':
-            # For exe installers, use Install-ChocolateyPackage
             ps1 = f'''$ErrorActionPreference = 'Stop'
 
 $packageName = '{pkg_id.lower()}'
@@ -1321,13 +1366,16 @@ $packageArgs = @{{
   url64bit      = $url64
   silentArgs    = '/S /D=C:\\Program Files\\{pkg_name}'
   validExitCodes= @(0, 3010, 1641)
-  softwareName  = '{pkg_name}*'
+  softwareName  = '{pkg_name}*'{checksum_lines}
 }}
 
 Install-ChocolateyPackage @packageArgs
 '''
         else:
-            # For zip archives, download and extract
+            checksum_params = ''
+            if checksum:
+                checksum_params = f" -Checksum '{checksum}' -ChecksumType 'sha256' -Checksum64 '{checksum}' -ChecksumType64 'sha256'"
+
             ps1 = f'''$ErrorActionPreference = 'Stop'
 
 $packageName = '{pkg_id.lower()}'
@@ -1339,7 +1387,7 @@ $installDir = Join-Path $env:ProgramFiles '{pkg_name}'
 $zipFile    = Join-Path $env:TEMP '{filename}'
 
 # Download
-Get-ChocolateyWebFile -PackageName $packageName -FileFullPath $zipFile -Url $url -Url64bit $url64
+Get-ChocolateyWebFile -PackageName $packageName -FileFullPath $zipFile -Url $url -Url64bit $url64{checksum_params}
 
 # Extract
 Get-ChocolateyUnzip -FileFullPath $zipFile -Destination $installDir -PackageName $packageName
@@ -1373,8 +1421,12 @@ if (Test-Path $installDir) {{
 '''
         return ps1
 
-    def build(self, output_dir: Optional[str] = None) -> bool:
-        """Generate Chocolatey package specs for all Windows apps."""
+    def build(self, output_dir: Optional[str] = None, calculate_sha256: bool = True) -> bool:
+        """Generate Chocolatey package specs for all Windows apps.
+
+        Checksums are computed by default since Chocolatey moderation requires
+        them for any package that downloads remote files.
+        """
         out = self.output_dir if output_dir is None else Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
 
@@ -1408,6 +1460,15 @@ if (Test-Path $installDir) {{
 
             pkg_id = slug.lower()
 
+            # Compute checksum (required for Chocolatey moderation approval)
+            checksum = ''
+            if calculate_sha256:
+                checksum = get_sha256(dl_info['url']) or ''
+                if not checksum:
+                    logger.warning(f"Could not compute checksum for {slug}, skipping")
+                    failed += 1
+                    continue
+
             # Create package directory structure
             pkg_dir = out / pkg_id
             tools_dir = pkg_dir / "tools"
@@ -1415,7 +1476,7 @@ if (Test-Path $installDir) {{
 
             # Generate files
             nuspec = self._generate_nuspec(app, latest, pkg_id)
-            install_ps1 = self._generate_install_ps1(app, latest, dl_info, pkg_id)
+            install_ps1 = self._generate_install_ps1(app, latest, dl_info, pkg_id, checksum)
             uninstall_ps1 = self._generate_uninstall_ps1(app, pkg_id)
 
             (pkg_dir / f"{pkg_id}.nuspec").write_text(nuspec, encoding="utf-8")
@@ -1610,7 +1671,10 @@ Examples:
         logger.info("Building Chocolatey Packages")
         logger.info("=" * 60)
         builder = ChocolateyBuilder(client, output_dir=args.chocolatey_output)
-        results['chocolatey'] = builder.build(output_dir=args.chocolatey_output)
+        results['chocolatey'] = builder.build(
+            output_dir=args.chocolatey_output,
+            calculate_sha256=True
+        )
     
     # Summary
     logger.info("=" * 60)
