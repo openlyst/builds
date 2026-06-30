@@ -6,7 +6,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/Platforms-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Linux%20%7C%20Arch-success)](https://openlyst.ink)
+[![Platform](https://img.shields.io/badge/Platforms-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Linux%20%7C%20Arch%20%7C%20Windows-success)](https://openlyst.ink)
 
 [Website](https://openlyst.ink) &bull; [Releases](https://openlyst.github.io/builds/) &bull; [API Docs](https://openlyst.ink/docs/api)
 
@@ -22,6 +22,7 @@ A single Python script that fetches app metadata from the [OpenLyst API](https:/
 - **F-Droid (Android)** — Produces a full F-Droid repository with category mapping and APK indexing
 - **Homebrew (macOS/Linux)** — Creates formulae and casks for both Intel and Apple Silicon
 - **AUR (Arch Linux)** — Generates PKGBUILDs for `-bin` packages, including unstable builds from GitHub releases
+- **Chocolatey (Windows)** — Generates `.nuspec` and PowerShell install/uninstall scripts for Chocolatey packages
 - **Docker** — Publishes web app images to GitHub Container Registry (ghcr.io)
 - **GitHub Actions** — Two workflows: one for building app binaries across platforms, one for generating and pushing all repositories
 
@@ -45,6 +46,7 @@ python build.py --target altstore          # iOS only
 python build.py --target fdroid            # Android only
 python build.py --target homebrew          # Homebrew only
 python build.py --target aur               # AUR PKGBUILDs only
+python build.py --target chocolatey        # Chocolatey packages only
 python build.py --target altstore,fdroid   # Multiple at once
 
 # Homebrew platform filter
@@ -122,6 +124,27 @@ Install with:
 yay -S finar-bin    # or any other package above
 ```
 
+### Chocolatey (Windows)
+
+Chocolatey package specs are generated for all Windows apps with download URLs. Each package includes a `.nuspec` metadata file and PowerShell install/uninstall scripts.
+
+| Package | App |
+|---------|-----|
+| `doudou` | Doudou (music player) |
+| `finar` | Finar (Jellyfin client) |
+| `kilt` | Kilt (e926 client) |
+
+To build and push a `.nupkg` from the generated specs:
+
+```powershell
+cd chocolatey-packages/doudou
+choco pack doudou.nuspec
+choco push doudou.20.0.0.nupkg --source https://push.chocolatey.org/ --api-key YOUR_API_KEY
+```
+
+> [!TIP]
+> The `build-unified.yml` workflow automatically packs and pushes all Chocolatey packages when the `CHOCOLATEY_API_KEY` repository secret is set. Without the secret, packages are still generated and committed but not published.
+
 ### Docker
 
 Images are published to GitHub Container Registry for web-based apps.
@@ -168,7 +191,7 @@ Generates and pushes all repository outputs. Trigger it from the Actions tab.
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `target` | `all`, `altstore`, `fdroid`, `homebrew`, or `aur` | `all` |
+| `target` | `all`, `altstore`, `fdroid`, `homebrew`, `aur`, or `chocolatey` | `all` |
 | `platform` | Homebrew only: `both`, `macOS`, or `Linux` | `both` |
 | `calculate_hashes` | Include SHA256 hashes (slower) | `false` |
 
@@ -177,7 +200,7 @@ Generates and pushes all repository outputs. Trigger it from the Actions tab.
 Builds app binaries from source across iOS, Android, Windows, Linux, macOS, and web. Each app has its own toggle and platform selector in the workflow run form.
 
 > [!IMPORTANT]
-> AUR pushes require the `AUR_SSH_KEY_BASE64` and `AUR_SSH_KEY_PASSWORD` repository secrets. Android signing requires per-app keystore secrets (optional — omit for unsigned builds).
+> AUR pushes require the `AUR_SSH_KEY_BASE64` and `AUR_SSH_KEY_PASSWORD` repository secrets. Android signing requires per-app keystore secrets (optional — omit for unsigned builds). Chocolatey auto-publishing requires the `CHOCOLATEY_API_KEY` secret (optional — without it, packages are packed but not pushed).
 
 ## Project Structure
 
@@ -188,6 +211,7 @@ Builds app binaries from source across iOS, Android, Windows, Linux, macOS, and 
 ├── fdroid-repo/                # F-Droid repository output
 ├── homebrew-tap/               # Homebrew tap output
 │   └── Formula/                # Homebrew formulae and casks
+├── chocolatey-packages/        # Chocolatey package specs output
 ├── docs/                       # GitHub Pages site
 └── .github/workflows/
     ├── build-unified.yml       # Repository generation workflow

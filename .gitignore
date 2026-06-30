@@ -23,6 +23,7 @@ wheels/
 
 # Virtual environments
 venv/
+.venv/
 ENV/
 env/
 
@@ -44,6 +45,9 @@ htmlcov/
 # AUR (generated PKGBUILDs and push clone dir)
 aur-packages/
 aur-push/
+
+# Chocolatey (generated package specs)
+chocolatey-packages/
 
 # Temporary files
 *.tmp
