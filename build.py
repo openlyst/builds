@@ -1364,7 +1364,7 @@ $packageArgs = @{{
   fileType      = 'exe'
   url           = $url
   url64bit      = $url64
-  silentArgs    = '/S /D=C:\\Program Files\\{pkg_name}'
+  silentArgs    = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-'
   validExitCodes= @(0, 3010, 1641)
   softwareName  = '{pkg_name}*'{checksum_lines}
 }}
