@@ -4,7 +4,7 @@
     "description": "Free and open source Android applications from OpenLyst",
     "icon": "icon.png",
     "address": "https://raw.githubusercontent.com/openlyst/builds/main/fdroid-repo",
-    "timestamp": 1782856585890,
+    "timestamp": 1782873135228,
     "version": 21
   },
   "requests": {
@@ -23,8 +23,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1782856585890,
-      "lastUpdated": 1782856585890
+      "added": 1782873135228,
+      "lastUpdated": 1782873135228
     },
     {
       "packageName": "finar",
@@ -37,8 +37,8 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1782856585890,
-      "lastUpdated": 1782856585890
+      "added": 1782873135228,
+      "lastUpdated": 1782873135228
     },
     {
       "packageName": "kilt",
@@ -51,14 +51,14 @@
         "System"
       ],
       "webSite": "https://openlyst.ink",
-      "added": 1782856585890,
-      "lastUpdated": 1782856585890
+      "added": 1782873135228,
+      "lastUpdated": 1782873135228
     }
   ],
   "packages": {
     "doudou": [
       {
-        "added": 1782856580344,
+        "added": 1782873132185,
         "apkName": "doudou-20.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -70,7 +70,7 @@
         "versionName": "20.0.0"
       },
       {
-        "added": 1782856580727,
+        "added": 1782873132382,
         "apkName": "doudou-19.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -82,7 +82,7 @@
         "versionName": "19.0.0"
       },
       {
-        "added": 1782856581095,
+        "added": 1782873132559,
         "apkName": "doudou-18.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -94,7 +94,7 @@
         "versionName": "18.0.0"
       },
       {
-        "added": 1782856581483,
+        "added": 1782873132777,
         "apkName": "doudou-17.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -106,7 +106,7 @@
         "versionName": "17.0.0"
       },
       {
-        "added": 1782856581956,
+        "added": 1782873132945,
         "apkName": "doudou-16.2.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -120,7 +120,7 @@
     ],
     "finar": [
       {
-        "added": 1782856582192,
+        "added": 1782873133157,
         "apkName": "finar-4.1.1.apk",
         "hash": "",
         "hashType": "sha256",
@@ -132,7 +132,7 @@
         "versionName": "4.1.1"
       },
       {
-        "added": 1782856582616,
+        "added": 1782873133353,
         "apkName": "finar-4.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -144,7 +144,7 @@
         "versionName": "4.1.0"
       },
       {
-        "added": 1782856582996,
+        "added": 1782873133516,
         "apkName": "finar-3.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -156,7 +156,7 @@
         "versionName": "3.0.0"
       },
       {
-        "added": 1782856583259,
+        "added": 1782873133797,
         "apkName": "finar-2.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -168,7 +168,7 @@
         "versionName": "2.0.0"
       },
       {
-        "added": 1782856583677,
+        "added": 1782873133964,
         "apkName": "finar-1.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -182,7 +182,7 @@
     ],
     "kilt": [
       {
-        "added": 1782856583861,
+        "added": 1782873134089,
         "apkName": "kilt-10.1.2.apk",
         "hash": "",
         "hashType": "sha256",
@@ -194,7 +194,7 @@
         "versionName": "10.1.2"
       },
       {
-        "added": 1782856584256,
+        "added": 1782873134272,
         "apkName": "kilt-10.1.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -206,7 +206,7 @@
         "versionName": "10.1.0"
       },
       {
-        "added": 1782856584634,
+        "added": 1782873134490,
         "apkName": "kilt-9.0.1.apk",
         "hash": "",
         "hashType": "sha256",
@@ -218,7 +218,7 @@
         "versionName": "9.0.1"
       },
       {
-        "added": 1782856585086,
+        "added": 1782873134670,
         "apkName": "kilt-9.0.0.apk",
         "hash": "",
         "hashType": "sha256",
@@ -230,7 +230,7 @@
         "versionName": "9.0.0"
       },
       {
-        "added": 1782856585508,
+        "added": 1782873134962,
         "apkName": "kilt-8.1.0.apk",
         "hash": "",
         "hashType": "sha256",
