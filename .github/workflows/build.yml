@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: ''
+      doudou_branch:
+        description: 'Doudou branch to build (leave empty for default branch)'
+        required: false
+        type: string
+        default: ''
       build_doudou_playstore:
         description: 'Build Doudou Play Store AAB'
         required: false
@@ -55,6 +60,11 @@ on:
         required: false
         type: string
         default: ''
+      finar_branch:
+        description: 'Finar branch to build (leave empty for default branch)'
+        required: false
+        type: string
+        default: ''
       # Kilt
       build_kilt:
         description: 'Build Kilt'
@@ -68,6 +78,11 @@ on:
         default: 'ios,android,windows,linux,macos'
       kilt_commit_hash:
         description: 'Kilt commit hash (leave empty for latest)'
+        required: false
+        type: string
+        default: ''
+      kilt_branch:
+        description: 'Kilt branch to build (leave empty for default branch)'
         required: false
         type: string
         default: ''
@@ -160,6 +175,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -346,6 +365,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -418,6 +441,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.kilt_branch != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.kilt_commit_hash != '' }}
@@ -614,6 +641,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -905,6 +936,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -1017,6 +1052,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.kilt_branch != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.kilt_commit_hash != '' }}
@@ -1248,6 +1287,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -1416,6 +1459,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -1490,6 +1537,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.kilt_branch != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.kilt_commit_hash != '' }}
@@ -1651,6 +1702,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -1837,6 +1892,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -1998,6 +2057,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -2161,6 +2224,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -2322,6 +2389,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -2485,6 +2556,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -2647,6 +2722,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -2808,6 +2887,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
@@ -3145,6 +3228,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -3281,6 +3368,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.kilt_branch != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.kilt_commit_hash != '' }}
@@ -4068,6 +4159,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.doudou_branch != '' }}
+        run: git checkout ${{ github.event.inputs.doudou_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.doudou_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
@@ -4337,6 +4432,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -4466,6 +4565,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.kilt_branch != '' }}
+        run: git checkout ${{ github.event.inputs.kilt_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.kilt_commit_hash != '' }}
@@ -4795,6 +4898,10 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
+
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
         run: git checkout ${{ github.event.inputs.finar_commit_hash }}
@@ -4933,6 +5040,10 @@ jobs:
 
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
+
+      - name: Checkout specific branch
+        if: ${{ github.event.inputs.finar_branch != '' }}
+        run: git checkout ${{ github.event.inputs.finar_branch }}
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.finar_commit_hash != '' }}
