@@ -13,8 +13,8 @@ on:
         required: false
         type: string
         default: 'ios,android,windows,linux,macos'
-      doudou_commit_hash:
-        description: 'Doudou commit hash (leave empty for latest)'
+      doudou_ref:
+        description: 'Doudou branch or commit hash (leave empty for default branch)'
         required: false
         type: string
         default: ''
@@ -50,8 +50,8 @@ on:
         required: false
         type: string
         default: 'ios,android,windows,linux,macos,web,docker'
-      finar_commit_hash:
-        description: 'Finar commit hash (leave empty for latest)'
+      finar_ref:
+        description: 'Finar branch or commit hash (leave empty for default branch)'
         required: false
         type: string
         default: ''
@@ -66,8 +66,8 @@ on:
         required: false
         type: string
         default: 'ios,android,windows,linux,macos'
-      kilt_commit_hash:
-        description: 'Kilt commit hash (leave empty for latest)'
+      kilt_ref:
+        description: 'Kilt branch or commit hash (leave empty for default branch)'
         required: false
         type: string
         default: ''
@@ -161,9 +161,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -276,7 +278,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -346,9 +350,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -419,9 +425,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -538,7 +546,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -615,9 +625,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         shell: bash
@@ -795,7 +807,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Get version and date
         id: version
@@ -905,9 +919,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - name: Get version and date
         id: version
@@ -1018,9 +1034,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
 
       - name: Get version and date
         id: version
@@ -1132,7 +1150,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Get version and date
         id: version
@@ -1248,9 +1268,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -1344,7 +1366,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1416,9 +1440,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1491,9 +1517,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1573,7 +1601,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1652,9 +1682,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -1837,9 +1869,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -1999,9 +2033,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2161,9 +2197,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2323,9 +2361,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2485,9 +2525,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2647,9 +2689,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2809,9 +2853,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -2973,7 +3019,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -3145,9 +3193,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -3282,9 +3332,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -3476,7 +3528,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.repstore_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.repstore_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.repstore_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -3651,7 +3705,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -3829,7 +3885,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.lystcode_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Get version and date
         id: version
@@ -3898,7 +3956,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.lystcode_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Get version from package.json
         id: version
@@ -3976,7 +4036,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.lystcode_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.lystcode_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.lystcode_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Get version from package.json
         id: version
@@ -4068,9 +4130,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/doudou.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.doudou_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.doudou_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.doudou_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.doudou_ref }}
+        run: git checkout "$REF"
 
       - name: Fix RepeatMode conflict with Flutter
         run: |
@@ -4210,7 +4274,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Install Linux dependencies
         run: |
@@ -4337,9 +4403,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - name: Install Linux dependencies
         run: |
@@ -4467,9 +4535,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/klit.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.kilt_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.kilt_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
 
       - name: Install Linux dependencies
         run: |
@@ -4598,7 +4668,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - name: Install Linux dependencies
         run: |
@@ -4731,7 +4803,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.docan_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.docan_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.docan_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -4795,9 +4869,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -4864,7 +4940,9 @@ jobs:
 
       - name: Checkout specific commit
         if: ${{ github.event.inputs.opentorrent_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.opentorrent_commit_hash }}
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.opentorrent_commit_hash }}
+        run: git checkout "$COMMIT_HASH"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -4934,9 +5012,11 @@ jobs:
       - name: Clone GitLab Repo
         run: git clone https://gitlab.com/Openlyst/finar.git .
 
-      - name: Checkout specific commit
-        if: ${{ github.event.inputs.finar_commit_hash != '' }}
-        run: git checkout ${{ github.event.inputs.finar_commit_hash }}
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.finar_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.finar_ref }}
+        run: git checkout "$REF"
 
       - name: Get version from pubspec
         id: version
