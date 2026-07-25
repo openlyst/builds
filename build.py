@@ -1599,7 +1599,8 @@ Examples:
     # Parse targets
     targets: Set[str] = set()
     if args.target.lower() == 'all':
-        targets = {'altstore', 'fdroid', 'homebrew', 'aur', 'chocolatey'}
+        # chocolatey disabled (package ownership issue on chocolatey.org); re-enable when resolved
+        targets = {'altstore', 'fdroid', 'homebrew', 'aur'}
     else:
         targets = {t.strip().lower() for t in args.target.split(',')}
     

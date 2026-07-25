@@ -14,7 +14,6 @@ on:
           - fdroid
           - homebrew
           - aur
-          - chocolatey
       platform:
         description: 'Homebrew platform (only for homebrew target)'
         required: false
@@ -208,7 +207,7 @@ jobs:
       - name: Commit and push changes
         run: |
           # Add all output directories
-          git add repo/ fdroid-repo/ homebrew-tap/ chocolatey-packages/ 2>/dev/null || true
+          git add repo/ fdroid-repo/ homebrew-tap/ 2>/dev/null || true
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -252,7 +251,7 @@ jobs:
           if-no-files-found: ignore
       
       - name: Upload Chocolatey artifact
-        if: contains(github.event.inputs.target || 'all', 'chocolatey') || github.event.inputs.target == 'all'
+        if: false  # chocolatey disabled (ownership issue on chocolatey.org); re-enable when resolved
         uses: actions/upload-artifact@v4
         with:
           name: chocolatey-packages
@@ -263,7 +262,7 @@ jobs:
   publish-chocolatey:
     needs: build
     runs-on: windows-latest
-    if: contains(github.event.inputs.target || 'all', 'chocolatey') || github.event.inputs.target == 'all'
+    if: false  # chocolatey disabled (ownership issue on chocolatey.org); re-enable when resolved
 
     steps:
       - name: Download Chocolatey artifact
