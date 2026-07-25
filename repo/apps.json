@@ -176,6 +176,14 @@
       "category": "other",
       "versions": [
         {
+          "version": "10.2.0",
+          "buildVersion": "1",
+          "date": "2026-07-24",
+          "downloadURL": "https://github.com/openlyst/builds/releases/download/build-152/kilt-10.2.0-2026-07-24-ios-unsigned.ipa",
+          "size": 21436551,
+          "localizedDescription": "# 10.2.0\n\n- Fixed crash when playing video in release builds on macOS by disabling hardware acceleration\n- Fixed artist names not showing on posts by adding `mode=extended` to e621 v2 API requests\n- Fixed macOS app icon not displaying by regenerating it via `flutter_launcher_icons`"
+        },
+        {
           "version": "10.1.2",
           "buildVersion": "1",
           "date": "2026-06-11",
