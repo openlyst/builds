@@ -283,39 +283,46 @@ jobs:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
         run: |
           $ErrorActionPreference = 'Continue'
+          $realFailure = $false
 
-          # Find all .nuspec files and pack + push each one
-          Get-ChildItem -Path chocolatey-packages -Recurse -Filter "*.nuspec" | ForEach-Object {
-            $pkgDir = $_.DirectoryName
-            $nuspec = $_.FullName
-            $pkgName = $_.BaseName
+          # Find all .nuspec files and pack + push each one.
+          # Use foreach (not ForEach-Object) so $realFailure edits persist in this scope.
+          foreach ($pkg in (Get-ChildItem -Path chocolatey-packages -Recurse -Filter "*.nuspec")) {
+            $pkgDir = $pkg.DirectoryName
+            $nuspec = $pkg.FullName
+            $pkgName = $pkg.BaseName
 
             Write-Host "::notice::Packing $pkgName..."
             Push-Location $pkgDir
             try {
               choco pack $nuspec --no-color
               if ($LASTEXITCODE -ne 0) {
-                Write-Host "::warning::Failed to pack $pkgName (exit $LASTEXITCODE)"
-                Pop-Location
-                return
+                Write-Host "::error::Failed to pack $pkgName (exit $LASTEXITCODE)"
+                $realFailure = $true
+                continue
               }
 
               # Find the generated .nupkg
               $nupkg = Get-ChildItem -Path $pkgDir -Filter "*.nupkg" | Select-Object -First 1
               if (-not $nupkg) {
-                Write-Host "::warning::No .nupkg found for $pkgName after packing"
-                Pop-Location
-                return
+                Write-Host "::error::No .nupkg found for $pkgName after packing"
+                $realFailure = $true
+                continue
               }
 
               if ($env:CHOCOLATEY_API_KEY -and $env:CHOCOLATEY_API_KEY -ne '') {
                 Write-Host "::notice::Pushing $($nupkg.Name) to Chocolatey..."
-                choco push $nupkg.FullName --source https://push.chocolatey.org/ --force --api-key $env:CHOCOLATEY_API_KEY
-                if ($LASTEXITCODE -eq 0) {
+                $pushOutput = (& choco push $nupkg.FullName --source https://push.chocolatey.org/ --force --api-key $env:CHOCOLATEY_API_KEY 2>&1 | Out-String)
+                $pushOutput | Write-Host
+                $pushExit = $LASTEXITCODE
+                if ($pushExit -eq 0) {
                   Write-Host "::notice::Successfully pushed $($nupkg.Name)"
+                } elseif ($pushOutput -match 'already exist|409|Conflict') {
+                  # Version already on Chocolatey - expected on re-runs, not a failure.
+                  Write-Host "::notice::Push for $($nupkg.Name) skipped (version already exists on Chocolatey)"
                 } else {
-                  # 409 = version already exists, which is fine
-                  Write-Host "::warning::Push for $($nupkg.Name) returned exit $LASTEXITCODE (may already exist at this version)"
+                  Write-Host "::error::Push for $($nupkg.Name) failed (exit $pushExit)"
+                  $realFailure = $true
                 }
               } else {
                 Write-Host "::notice::No CHOCOLATEY_API_KEY set, skipping push for $($nupkg.Name)"
@@ -326,3 +333,4 @@ jobs:
           }
 
           Write-Host "Chocolatey publish step complete"
+          if ($realFailure) { exit 1 }
