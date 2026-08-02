@@ -4304,10 +4304,20 @@ jobs:
           echo "Architecture: $(uname -m)"
           test "$(uname -m)" = "aarch64"
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
+      - name: Install Flutter (stable)
+        # subosito/flutter-action@v2 fails to resolve the stable channel on ARM64
+        # runners ("Unable to determine Flutter version ... architecture: arm64"),
+        # so install Flutter manually from git — same approach as the x64 job's
+        # underlying action but without the arm64 version-resolution bug.
+        run: |
+          git clone --depth 1 -b stable https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          echo "PUB_CACHE=$HOME/.pub-cache" >> "$GITHUB_ENV"
+
+      - name: Flutter doctor
+        run: |
+          flutter --version
+          flutter config --enable-linux-desktop
 
       - name: Install appimagetool (arm64)
         run: |
@@ -4328,7 +4338,6 @@ jobs:
 
       - name: Build Linux (arm64)
         run: |
-          flutter config --enable-linux-desktop
           flutter pub get
           flutter build linux --release --build-name=${{ steps.version.outputs.version }}
 
