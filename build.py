@@ -860,17 +860,25 @@ AUR_PACKAGES = {
     # 'lystcode': ('lystcode', 'lystcode', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
 }
 
+# ARM64 (aarch64) AUR packages — pull arm64 zips from GitHub releases
+AUR_ARM64_PACKAGES = {
+    'doudou-bin-aarch64': ('doudou', 'doudou', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
+    'klit-bin-aarch64': ('kilt', 'kilt', 'bundle', 'data/flutter_assets/assets/icons/icon.png'),
+}
+
 # GitHub repo for build workflow releases (unstable AUR packages use these download URLs)
 GITHUB_RELEASES_API = "https://api.github.com/repos/openlyst/builds/releases"
 
 
-def get_latest_linux_zip_from_github(slug: str, session: Optional[requests.Session] = None) -> Optional[tuple]:
+def get_latest_linux_zip_from_github(slug: str, session: Optional[requests.Session] = None, arch: str = 'x86_64') -> Optional[tuple]:
     """Fetch latest Linux zip URL and version from this repo's GitHub releases.
     Returns (download_url, pkgver) or None. Uses first release that has an asset
-    matching {slug}-*-linux*.zip.
+    matching {slug}-*-linux-{arch_suffix}.zip where arch_suffix is 'x64' or 'arm64'.
     """
     session = session or requests.Session()
     session.headers.setdefault("User-Agent", "Openlyst-Unified-Builder/1.0")
+    # Map arch names to the suffix used in release asset filenames
+    arch_suffix = {'x86_64': 'x64', 'aarch64': 'arm64'}.get(arch, arch)
     try:
         r = session.get(GITHUB_RELEASES_API, params={"per_page": 30}, timeout=15)
         r.raise_for_status()
@@ -881,13 +889,13 @@ def get_latest_linux_zip_from_github(slug: str, session: Optional[requests.Sessi
     if not isinstance(releases, list):
         return None
     prefix = f"{slug}-"
-    suffix_zip = "-linux-x64.zip"
+    suffix_zip = f"-linux-{arch_suffix}.zip"
     for release in releases:
         tag = release.get("tag_name") or ""
         assets = release.get("assets") or []
         for asset in assets:
             name = asset.get("name") or ""
-            if name.startswith(prefix) and (name.endswith(suffix_zip) or "-linux" in name and name.endswith(".zip")):
+            if name.startswith(prefix) and name.endswith(suffix_zip):
                 url = asset.get("browser_download_url")
                 if not url:
                     continue
@@ -1050,6 +1058,7 @@ sha256sums=('SKIP')
         app_name: Optional[str] = None,
         bundle_subdir: Optional[str] = None,
         icon_path: Optional[str] = None,
+        arch: str = 'x86_64',
     ) -> Optional[str]:
         """Build PKGBUILD content for unstable AUR package from a direct download URL."""
         aname, bsubdir, ipath = self._aur_metadata_for_slug(slug)
@@ -1092,7 +1101,7 @@ pkgname={pkgname}
 pkgver={pkgver}
 pkgrel=1
 pkgdesc="{pkgdesc}"
-arch=('x86_64')
+arch=('{arch}')
 url="{url}"
 license=('{license_val}')
 depends=({depends_str})
@@ -1146,6 +1155,24 @@ sha256sums=('SKIP')
                     pkg_dir.mkdir(parents=True, exist_ok=True)
                     (pkg_dir / "PKGBUILD").write_text(content, encoding="utf-8")
                     logger.info(f"Wrote AUR PKGBUILD (unstable): {pkg_dir / 'PKGBUILD'}")
+                    success += 1
+            # ARM64 unstable packages from GitHub releases
+            for pkgname, (slug, _, _, _) in AUR_ARM64_PACKAGES.items():
+                gh = get_latest_linux_zip_from_github(slug, self.client.session, arch='arm64')
+                if not gh:
+                    logger.debug(f"No GitHub release Linux arm64 zip for {slug}, skipping arm64 unstable")
+                    continue
+                linux_url, pkgver = gh
+                app = self.client.get_app_details(slug)
+                if not app:
+                    continue
+                pkgname_unstable = f"{pkgname}-unstable"
+                content = self.build_pkgbuild_from_url(pkgname_unstable, slug, app, linux_url, pkgver, arch='aarch64')
+                if content:
+                    pkg_dir = out / pkgname_unstable
+                    pkg_dir.mkdir(parents=True, exist_ok=True)
+                    (pkg_dir / "PKGBUILD").write_text(content, encoding="utf-8")
+                    logger.info(f"Wrote AUR PKGBUILD (unstable arm64): {pkg_dir / 'PKGBUILD'}")
                     success += 1
             if success == 0:
                 logger.error("No unstable AUR PKGBUILDs generated")
