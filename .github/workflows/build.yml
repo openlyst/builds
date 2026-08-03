@@ -23,11 +23,6 @@ on:
         required: false
         type: boolean
         default: false
-      build_doudou_linux_arm64:
-        description: 'Build Doudou Linux ARM64 (aarch64) — requires build_doudou=true'
-        required: false
-        type: boolean
-        default: false
       # Docan
       build_docan:
         description: 'Build Docan'
@@ -76,8 +71,8 @@ on:
         required: false
         type: string
         default: ''
-      build_kilt_linux_arm64:
-        description: 'Build Kilt Linux ARM64 (aarch64) — requires build_kilt=true'
+      build_linux_arm64:
+        description: 'Build Linux ARM64 (aarch64) for apps with linux builds enabled'
         required: false
         type: boolean
         default: false
@@ -4264,7 +4259,7 @@ jobs:
 
   # LINUX - DOUDOU (ARM64)
   build-linux-doudou-arm64:
-    if: ${{ github.event.inputs.build_doudou == 'true' && github.event.inputs.build_doudou_linux_arm64 == 'true' }}
+    if: ${{ github.event.inputs.build_doudou == 'true' && github.event.inputs.build_linux_arm64 == 'true' }}
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
@@ -4811,7 +4806,7 @@ jobs:
 
   # LINUX - KILT (ARM64)
   build-linux-kilt-arm64:
-    if: ${{ github.event.inputs.build_kilt == 'true' && github.event.inputs.build_kilt_linux_arm64 == 'true' }}
+    if: ${{ github.event.inputs.build_kilt == 'true' && github.event.inputs.build_linux_arm64 == 'true' }}
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
