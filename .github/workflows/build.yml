@@ -76,6 +76,11 @@ on:
         required: false
         type: string
         default: ''
+      build_kilt_linux_arm64:
+        description: 'Build Kilt Linux ARM64 (aarch64) — requires build_kilt=true'
+        required: false
+        type: boolean
+        default: false
       # Repstore
       build_repstore:
         description: 'Build Repstore'
@@ -4804,6 +4809,140 @@ jobs:
             kilt-*-linux-x64.zip
             artifacts/
 
+  # LINUX - KILT (ARM64)
+  build-linux-kilt-arm64:
+    if: ${{ github.event.inputs.build_kilt == 'true' && github.event.inputs.build_kilt_linux_arm64 == 'true' }}
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_date: ${{ steps.version.outputs.build_date }}
+      duration: ${{ steps.duration.outputs.duration }}
+      status: ${{ steps.status.outputs.status }}
+    steps:
+      - name: Record start time
+        id: start
+        run: echo "start_time=$(date -Iseconds)" >> $GITHUB_OUTPUT
+
+      - name: Clone GitLab Repo
+        run: git clone https://gitlab.com/Openlyst/klit.git .
+
+      - name: Checkout specific ref
+        if: ${{ github.event.inputs.kilt_ref != '' }}
+        env:
+          REF: ${{ github.event.inputs.kilt_ref }}
+        run: git checkout "$REF"
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libmpv-dev libasound2-dev dpkg-dev rpm wget file squashfs-tools patchelf libfuse2
+
+      - name: Confirm ARM64 runner
+        run: |
+          echo "Architecture: $(uname -m)"
+          test "$(uname -m)" = "aarch64"
+
+      - name: Install Flutter (stable)
+        # subosito/flutter-action@v2 fails to resolve the stable channel on ARM64
+        # runners, so install Flutter manually from git.
+        run: |
+          git clone --depth 1 -b stable https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          echo "PUB_CACHE=$HOME/.pub-cache" >> "$GITHUB_ENV"
+
+      - name: Flutter doctor
+        run: |
+          flutter --version
+          flutter config --enable-linux-desktop
+
+      - name: Install appimagetool (arm64)
+        run: |
+          wget -q -O /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-aarch64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+          cd /tmp && ./appimagetool.AppImage --appimage-extract
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
+          appimagetool --version || echo "appimagetool installed"
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g' | cut -d'+' -f1)
+          BUILD_DATE=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+      - name: Build Linux (arm64)
+        run: |
+          flutter pub get
+          flutter build linux --release --build-name=${{ steps.version.outputs.version }}
+
+      - name: Create ZIP
+        run: |
+          cd build/linux/arm64/release
+          zip -r $GITHUB_WORKSPACE/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-arm64.zip bundle/
+
+      - name: Install fastforge and build packages
+        run: |
+          dart pub global activate fastforge
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          export PUB_CACHE="$HOME/.pub-cache"
+          mkdir -p artifacts
+
+          echo "=== Checking configuration files ==="
+          ls -la linux/packaging/ || echo "No linux/packaging directory"
+          ls -la linux/packaging/deb/ 2>/dev/null || echo "No deb config"
+          ls -la linux/packaging/rpm/ 2>/dev/null || echo "No rpm config"
+          ls -la linux/packaging/appimage/ 2>/dev/null || echo "No appimage config"
+          cat distribute_options.yaml 2>/dev/null || echo "No distribute_options.yaml"
+
+          echo "=== Building DEB package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets deb --skip-clean || echo "DEB build failed or had warnings"
+
+          echo "=== Building RPM package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets rpm --skip-clean || echo "RPM build failed or had warnings"
+
+          echo "=== Building AppImage package ==="
+          $HOME/.pub-cache/bin/fastforge package --platform linux --targets appimage --skip-clean || echo "AppImage build failed or had warnings"
+
+          echo "=== Copying artifacts ==="
+          find . -name "*.deb" -type f 2>/dev/null
+          find . -name "*.rpm" -type f 2>/dev/null
+          find . -name "*.AppImage" -type f 2>/dev/null
+          find dist -name "*.deb" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-arm64.deb \; 2>/dev/null || true
+          find dist -name "*.rpm" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-arm64.rpm \; 2>/dev/null || true
+          find dist -name "*.AppImage" -exec cp {} artifacts/kilt-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_date }}-linux-aarch64.AppImage \; 2>/dev/null || true
+
+          echo "=== Final Artifacts ==="
+          ls -la artifacts/ || true
+          ls -laR dist/ 2>/dev/null || true
+
+      - name: Record duration and status
+        id: duration
+        if: always()
+        run: |
+          start_time="${{ steps.start.outputs.start_time }}"
+          start_seconds=$(date -d "$start_time" +%s)
+          end_seconds=$(date +%s)
+          duration=$(echo "scale=1; ($end_seconds - $start_seconds) / 60" | bc)
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Set status
+        id: status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux ARM64 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kilt-linux-arm64
+          path: |
+            kilt-*-linux-arm64.zip
+            artifacts/
+
   # LINUX - OPENTORRENT
   build-linux-opentorrent:
     if: ${{ github.event.inputs.build_opentorrent == 'true' && contains(github.event.inputs.opentorrent_platforms, 'linux') }}
@@ -5268,6 +5407,7 @@ jobs:
       - build-linux-docan
       - build-linux-finar
       - build-linux-kilt
+      - build-linux-kilt-arm64
       - build-linux-opentorrent
       - build-web-docan
       - build-web-finar
@@ -5536,6 +5676,7 @@ jobs:
             echo "- iOS: ${{ needs.build-ios-kilt.outputs.status || 'skipped' }} ${{ needs.build-ios-kilt.outputs.duration && format('({0} min)', needs.build-ios-kilt.outputs.duration) || '' }} (unsigned)" >> release_notes.md
             echo "- Android: ${{ needs.build-android-kilt.outputs.status || 'skipped' }} ${{ needs.build-android-kilt.outputs.duration && format('({0} min)', needs.build-android-kilt.outputs.duration) || '' }} - Signing: ${{ needs.build-android-kilt.outputs.signing || 'N/A' }}" >> release_notes.md
             echo "- Linux: ${{ needs.build-linux-kilt.outputs.status || 'skipped' }} ${{ needs.build-linux-kilt.outputs.duration && format('({0} min)', needs.build-linux-kilt.outputs.duration) || '' }}" >> release_notes.md
+            echo "- Linux ARM64: ${{ needs.build-linux-kilt-arm64.outputs.status || 'skipped' }} ${{ needs.build-linux-kilt-arm64.outputs.duration && format('({0} min)', needs.build-linux-kilt-arm64.outputs.duration) || '' }}" >> release_notes.md
             echo "" >> release_notes.md
           fi
 
@@ -5611,6 +5752,7 @@ jobs:
           if [ "${{ needs.build-linux-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Linux"; fi
           if [ "${{ needs.build-linux-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Linux"; fi
           if [ "${{ needs.build-linux-kilt.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-Linux"; fi
+          if [ "${{ needs.build-linux-kilt-arm64.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Kilt-Linux-ARM64"; fi
           if [ "${{ needs.build-linux-opentorrent.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS OpenTorrent-Linux"; fi
           if [ "${{ needs.build-web-docan.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Docan-Web"; fi
           if [ "${{ needs.build-web-finar.outputs.status }}" == "failure" ]; then FAILED_BUILDS="$FAILED_BUILDS Finar-Web"; fi
