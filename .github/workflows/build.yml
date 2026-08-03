@@ -5921,7 +5921,7 @@ jobs:
             pkg=$(basename "$pkg")
             if [ ! -f "aur-packages/$pkg/PKGBUILD" ]; then continue; fi
             echo "Updating AUR package: $pkg"
-            if ! git clone --depth 1 "ssh://aur@aur.archlinux.org/${pkg}.git" "aur-push/$pkg" 2>&1; then
+            if ! git clone "ssh://aur@aur.archlinux.org/${pkg}.git" "aur-push/$pkg" 2>&1; then
               echo "::warning::Clone failed for $pkg (create package on AUR first or check push access)"
               continue
             fi
