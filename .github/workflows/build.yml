@@ -71,11 +71,6 @@ on:
         required: false
         type: string
         default: ''
-      build_linux_arm64:
-        description: 'Build Linux ARM64 (aarch64) for apps with linux builds enabled'
-        required: false
-        type: boolean
-        default: false
       # Repstore
       build_repstore:
         description: 'Build Repstore'
@@ -4259,7 +4254,7 @@ jobs:
 
   # LINUX - DOUDOU (ARM64)
   build-linux-doudou-arm64:
-    if: ${{ github.event.inputs.build_doudou == 'true' && github.event.inputs.build_linux_arm64 == 'true' }}
+    if: ${{ github.event.inputs.build_doudou == 'true' && contains(github.event.inputs.doudou_platforms, 'linux') }}
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
@@ -4806,7 +4801,7 @@ jobs:
 
   # LINUX - KILT (ARM64)
   build-linux-kilt-arm64:
-    if: ${{ github.event.inputs.build_kilt == 'true' && github.event.inputs.build_linux_arm64 == 'true' }}
+    if: ${{ github.event.inputs.build_kilt == 'true' && contains(github.event.inputs.kilt_platforms, 'linux') }}
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
